@@ -12,18 +12,27 @@
 
 using namespace smm::research;
 
-static void write_json(const std::string& path, const std::string& json) { std::ofstream f(path); f << json; }
+static void write_json(const std::string& path, const std::string& json) {
+    std::ofstream f(path);
+    f << json;
+}
 
 static double roc_auc(const std::vector<double>& score, const std::vector<int>& label) {
     if (score.size() != label.size() || score.empty()) return 0.5;
     std::vector<std::size_t> idx(score.size());
     for (std::size_t i = 0; i < idx.size(); ++i) idx[i] = i;
-    std::stable_sort(idx.begin(), idx.end(), [&](std::size_t a, std::size_t b) { return score[a] < score[b]; });
+    std::stable_sort(idx.begin(), idx.end(), [&](std::size_t a, std::size_t b) {
+        return score[a] < score[b];
+    });
     double rank_sum = 0.0;
     std::size_t pos = 0, neg = 0;
     for (std::size_t r = 0; r < idx.size(); ++r) {
-        if (label[idx[r]]) { rank_sum += static_cast<double>(r + 1); ++pos; }
-        else ++neg;
+        if (label[idx[r]]) {
+            rank_sum += static_cast<double>(r + 1);
+            ++pos;
+        } else {
+            ++neg;
+        }
     }
     if (!pos || !neg) return 0.5;
     return (rank_sum - static_cast<double>(pos) * (pos + 1) / 2.0) /
@@ -45,30 +54,37 @@ int main(int argc, char** argv) {
     const auto solve_start = std::chrono::steady_clock::now();
     HjbQviSolution sol = HjbQviSolver(hc).solve();
     const auto solve_end = std::chrono::steady_clock::now();
-    const double solve_ms = std::chrono::duration<double, std::milli>(solve_end - solve_start).count();
+    const double solve_ms =
+        std::chrono::duration<double, std::milli>(solve_end - solve_start).count();
     QuoteEngine quote_engine(sol, 0.01);
 
     {
         std::ofstream pf(outdir + "/policy_t0.csv");
-        pf << "inventory,bid_delta,ask_delta,intervention
-";
+        pf << "inventory,bid_delta,ask_delta,intervention\n";
         for (int q = -hc.q_max; q <= hc.q_max; ++q) {
             pf << q << "," << sol.bid(0, q) << "," << sol.ask(0, q) << ","
-               << (sol.should_intervene(0, q) ? 1 : 0) << "
-";
+               << (sol.should_intervene(0, q) ? 1 : 0) << "\n";
         }
     }
 
     BivariateHawkesConfig hh;
-    hh.alpha_ss = 5.2; hh.alpha_sb = 0.3; hh.alpha_bs = 0.3; hh.alpha_bb = 5.2;
-    hh.mu_sell = 70.0; hh.mu_buy = 50.0;
+    hh.alpha_ss = 5.2;
+    hh.alpha_sb = 0.3;
+    hh.alpha_bs = 0.3;
+    hh.alpha_bb = 5.2;
+    hh.mu_sell = 70.0;
+    hh.mu_buy = 50.0;
     BivariateHawkes hawkes(hh);
     const auto stationary = hawkes.stationary_intensity();
 
     std::vector<StrategyRun> qvi_runs, base_runs;
-    qvi_runs.reserve(runs); base_runs.reserve(runs);
-    std::vector<double> hawkes_scores; std::vector<int> hawkes_labels;
-    hawkes_scores.reserve(runs * 500); hawkes_labels.reserve(runs * 500);
+    qvi_runs.reserve(runs);
+    base_runs.reserve(runs);
+
+    std::vector<double> hawkes_scores;
+    std::vector<int> hawkes_labels;
+    hawkes_scores.reserve(runs * 500);
+    hawkes_labels.reserve(runs * 500);
 
     for (std::size_t run = 0; run < runs; ++run) {
         const auto events = simulate_path(hawkes, 1000 + run);
@@ -77,9 +93,15 @@ int main(int argc, char** argv) {
         for (std::size_t i = 0; i + 1 < events.size(); ++i) {
             const double dt = events[i].time - last_t;
             const double decay = std::exp(-hh.beta * dt);
-            e0 *= decay; e1 *= decay;
-            if (events[i].type == 0) { e0 += hh.alpha_ss; e1 += hh.alpha_bs; }
-            else { e0 += hh.alpha_sb; e1 += hh.alpha_bb; }
+            e0 *= decay;
+            e1 *= decay;
+            if (events[i].type == 0) {
+                e0 += hh.alpha_ss;
+                e1 += hh.alpha_bs;
+            } else {
+                e0 += hh.alpha_sb;
+                e1 += hh.alpha_bb;
+            }
             const double ls = hh.mu_sell + e0;
             const double lb = hh.mu_buy + e1;
             hawkes_scores.push_back(ls / (ls + lb));
@@ -87,18 +109,20 @@ int main(int argc, char** argv) {
             last_t = events[i].time;
         }
 
-        qvi_runs.push_back(run_strategy(events, &quote_engine, 1.0 / hc.arrival_k, 100.0, 0.01,
-                                         hc.arrival_k, hc.liquidation_cost));
-        base_runs.push_back(run_strategy(events, nullptr, 1.0 / hc.arrival_k, 100.0, 0.01,
-                                         hc.arrival_k, hc.liquidation_cost));
+        qvi_runs.push_back(run_strategy(
+            events, &quote_engine, 1.0 / hc.arrival_k, 100.0, 0.01,
+            hc.arrival_k, hc.liquidation_cost));
+        base_runs.push_back(run_strategy(
+            events, nullptr, 1.0 / hc.arrival_k, 100.0, 0.01,
+            hc.arrival_k, hc.liquidation_cost));
 
         if (run == 0) {
             std::ofstream f(outdir + "/sample_hawkes_events.csv");
-            f << "time,type
-";
-            for (const auto& e : events)
-                f << std::fixed << std::setprecision(9) << e.time << "," << int(e.type) << "
-";
+            f << "time,type\n";
+            for (const auto& e : events) {
+                f << std::fixed << std::setprecision(9)
+                  << e.time << "," << int(e.type) << "\n";
+            }
         }
     }
 
@@ -108,62 +132,63 @@ int main(int argc, char** argv) {
     std::vector<double> group_ns;
     group_ns.reserve(200);
     volatile double sink = 0.0;
+
     for (int g = 0; g < 200; ++g) {
         const auto t0 = std::chrono::steady_clock::now();
         for (int i = 0; i < 5000; ++i) {
-            const auto q = quote_engine.quote(100.0 + (i % 101) * 0.0001,
-                                              (i % 31) - 15,
-                                              (i % 1000) * sol.dt);
+            const auto q = quote_engine.quote(
+                100.0 + (i % 101) * 0.0001,
+                (i % 31) - 15,
+                (i % 1000) * sol.dt);
             sink += q.bid + q.ask;
         }
         const auto t1 = std::chrono::steady_clock::now();
-        group_ns.push_back(std::chrono::duration<double, std::nano>(t1 - t0).count() / 5000.0);
+        group_ns.push_back(
+            std::chrono::duration<double, std::nano>(t1 - t0).count() / 5000.0);
     }
+
     std::sort(group_ns.begin(), group_ns.end());
     const double quote_median_ns = group_ns[group_ns.size() / 2];
-    const double quote_p99_ns = group_ns[static_cast<std::size_t>(0.99 * (group_ns.size() - 1))];
+    const double quote_p99_ns =
+        group_ns[static_cast<std::size_t>(0.99 * (group_ns.size() - 1))];
     (void)sink;
 
-    std::ostringstream j; j << std::setprecision(10);
-    j << "{
-"
-      << "  "runs": " << runs << ",
-"
-      << "  "hjb": {"gamma": " << hc.gamma << ", "sigma": " << hc.sigma
-      << ", "arrival_A": " << hc.arrival_A << ", "arrival_k": " << hc.arrival_k
-      << ", "q_max": " << hc.q_max << ", "time_steps": " << sol.time_steps << "},
-"
-      << "  "hjb_fdm_solve_ms": " << solve_ms << ",
-"
-      << "  "hawkes": {"branching_ratio": " << hawkes.branching_ratio()
-      << ", "stationary_sell_intensity": " << stationary[0]
-      << ", "stationary_buy_intensity": " << stationary[1]
-      << ", "next_sell_direction_auc": " << roc_auc(hawkes_scores, hawkes_labels)
-      << ", "prediction_samples": " << hawkes_labels.size() << "},
-"
-      << "  "quote_engine": {"median_ns": " << quote_median_ns
-      << ", "p99_ns": " << quote_p99_ns << "},
-"
-      << "  "strategies": {
-"
-      << "    "hjb_qvi": {"mean_pnl": " << qvi.mean_pnl
-      << ", "std_pnl": " << qvi.std_pnl
-      << ", "mean_rms_inventory": " << qvi.mean_rms_inventory
-      << ", "mean_abs_inventory": " << qvi.mean_abs_inventory
-      << ", "mean_adverse_selection_bps": " << qvi.mean_adverse_selection_bps
-      << ", "p95_abs_inventory": " << qvi.p95_abs_inventory << "},
-"
-      << "    "fixed_spread": {"mean_pnl": " << base.mean_pnl
-      << ", "std_pnl": " << base.std_pnl
-      << ", "mean_rms_inventory": " << base.mean_rms_inventory
-      << ", "mean_abs_inventory": " << base.mean_abs_inventory
-      << ", "mean_adverse_selection_bps": " << base.mean_adverse_selection_bps
-      << ", "p95_abs_inventory": " << base.p95_abs_inventory << "}
-"
-      << "  }
-"
-      << "}
-";
+    std::ostringstream j;
+    j << std::setprecision(10);
+    j << "{\n"
+      << "  \"runs\": " << runs << ",\n"
+      << "  \"hjb\": {\"gamma\": " << hc.gamma
+      << ", \"sigma\": " << hc.sigma
+      << ", \"arrival_A\": " << hc.arrival_A
+      << ", \"arrival_k\": " << hc.arrival_k
+      << ", \"q_max\": " << hc.q_max
+      << ", \"time_steps\": " << sol.time_steps << "},\n"
+      << "  \"hjb_fdm_solve_ms\": " << solve_ms << ",\n"
+      << "  \"hawkes\": {\"branching_ratio\": " << hawkes.branching_ratio()
+      << ", \"stationary_sell_intensity\": " << stationary[0]
+      << ", \"stationary_buy_intensity\": " << stationary[1]
+      << ", \"next_sell_direction_auc\": "
+      << roc_auc(hawkes_scores, hawkes_labels)
+      << ", \"prediction_samples\": " << hawkes_labels.size() << "},\n"
+      << "  \"quote_engine\": {\"median_ns\": " << quote_median_ns
+      << ", \"p99_ns\": " << quote_p99_ns << "},\n"
+      << "  \"strategies\": {\n"
+      << "    \"hjb_qvi\": {\"mean_pnl\": " << qvi.mean_pnl
+      << ", \"std_pnl\": " << qvi.std_pnl
+      << ", \"mean_rms_inventory\": " << qvi.mean_rms_inventory
+      << ", \"mean_abs_inventory\": " << qvi.mean_abs_inventory
+      << ", \"mean_adverse_selection_bps\": "
+      << qvi.mean_adverse_selection_bps
+      << ", \"p95_abs_inventory\": " << qvi.p95_abs_inventory << "},\n"
+      << "    \"fixed_spread\": {\"mean_pnl\": " << base.mean_pnl
+      << ", \"std_pnl\": " << base.std_pnl
+      << ", \"mean_rms_inventory\": " << base.mean_rms_inventory
+      << ", \"mean_abs_inventory\": " << base.mean_abs_inventory
+      << ", \"mean_adverse_selection_bps\": "
+      << base.mean_adverse_selection_bps
+      << ", \"p95_abs_inventory\": " << base.p95_abs_inventory << "}\n"
+      << "  }\n"
+      << "}\n";
 
     write_json(outdir + "/research_run.json", j.str());
     std::cout << j.str();

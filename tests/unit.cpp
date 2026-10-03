@@ -22,7 +22,9 @@ int main() {
     assert(h.branching_ratio() < 1.0);
     auto e = h.simulate(7);
     assert(!e.empty());
-    for (std::size_t i = 1; i < e.size(); ++i) assert(e[i].time >= e[i - 1].time);
-    std::cout << "smm_unit_tests: PASS
-";
+    for (std::size_t i = 1; i < e.size(); ++i) {
+        assert(e[i].time >= e[i - 1].time);
+    }
+
+    std::cout << "smm_unit_tests: PASS\n";
 }
