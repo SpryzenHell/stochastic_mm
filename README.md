@@ -1,258 +1,208 @@
 # Stochastic Market Maker
 
-## Overview
+**HJB-QVI inventory control · Hawkes microstructure model · C++ SIMD FDM quote engine**
 
-The **Stochastic Market Maker** utilizes Modern C++ to implement the market making strategy described in the Avellaneda-Stoikov model: *"High-frequency trading in a limit order book"* (Marco Avellaneda & Sasha Stoikov, 2006).
+This repository is a quantitative research sandbox that connects a stochastic-control policy, clustered limit-order-flow model, deterministic execution simulator, and low-latency C++ quote path into one reproducible experiment.
 
-It acts as a practical sandbox for market microstructure research. Explore how clustered order flow emerges from Hawkes processes, prototype execution logic on a deterministic C++ limit order book, and surface results through notebooks, scripts, and a guided Streamlit front end.
+> **Research scope:** the default experiment is synthetic. The code reports the actual metrics produced by the configured simulation; it does not present synthetic results as live-market performance.
 
-## Features
+## What the project now demonstrates
 
-We construct a market making engine which:
+### 1. Inventory control with a reduced HJB-QVI
 
-- **Simulates a Stream of market ticks** (market prices), either from:
-  - A synthetic stochastic model by generating a Brownian Motion
-  - A CSV to "Replay" a real trading day
-  - Designed to be extendable with other sources of data
+The market maker solves a finite-horizon inventory-control problem on an integer inventory grid. The continuation equation uses CARA-style inventory risk, quote-dependent order arrivals, and a liquidation/intervention obstacle.
 
-- **Computes mid/bid/ask prices and spread** of a market-making strategy such as:
-  - The Avellaneda-Stoikov model, based on an indifference price of the market-maker
-  - The benchmark strategy, which considers the market price as the mid price
+For each inventory state `q` and side, order-arrival intensity is
 
-- **Models market order arrivals** via the **inventory evolution of the market maker** as a Poisson process. The Poisson distribution intensities increase as quotes move closer to the mid price.
+`λ(δ) = A exp(-k δ)`
 
-- **Simulates a Full market-making session** (e.g. one trading day at high frequency), tracks inventory and P&L.
+and the numerical quote optimizer is the constrained solution
 
-- **Simulates Monte Carlo simulations** of market-making sessions with different sets of market-maker parameters (e.g. risk aversion), and computes Mean P&L and Standard deviation.
+`δ* = clamp(1/k - ΔV, δ_min, δ_max)`.
+
+The QVI step compares the continuation value with an intervention value
+
+`M[V](q) = V(0) - c_liq |q|`.
+
+The result is a time × inventory policy table containing bid distance, ask distance, value and intervention flags.
+
+This is intentionally a **reduced-state HJB-QVI discretization**, not a claim that the full price-space stochastic-control PDE has been solved in closed form.
+
+### 2. Hawkes model for clustered order-flow / price-jump direction
+
+A bivariate exponential Hawkes process produces sell-side and buy-side market-order events. Same-side excitation and cross-side excitation are modeled separately, so the simulator can represent asymmetric bursts instead of independent Poisson flow.
+
+The implementation reports the spectral branching ratio, stationary intensities, and a next-event direction AUC. Because each event also moves the synthetic mid-price by one tick, the direction predictor is directly connected to the simulated next mid-price jump.
+
+### 3. C++ SIMD FDM + constant-time policy lookup
+
+The HJB solver uses a compact inventory grid and an OpenMP-SIMD annotated hot loop. The solved policy is then served through a small C++ `QuoteEngine` whose runtime benchmark is measured independently from the offline PDE solve.
+
+This separation is important:
+
+- **FDM solve latency** = cost to compute the complete policy table.
+- **Quote latency** = cost to turn `(mid, inventory, time)` into bid/ask distances after the table already exists.
 
 ## Architecture
 
 ```text
-Market Making Engine
-│
-├── Core Data Structures
-│   ├── Tick
-│   ├── Quote
-│   ├── BookState
-│   ├── BookSnapshot
-│   └── TradingHistory
-│
-├── Strategy (IStrategy)
-│   ├── AsStrategy (Avellaneda-Stoikov)
-│   └── Benchmark
-│
-├── Market Data (IMarketDataStream)
-│   ├── BrownianStream
-│   └── CSVStream
-│
-├── Inventory (IInventoryModel)
-│   └── PoissonInventory
-│
-├── Simulation
-│   ├── MarketSimulator
-│   ├── MCEngine (Monte Carlo)
-│   ├── SimulationResult
-│   ├── MCStats
-│   └── Visualizer
-│
-└── Output
-    ├── CSV export
-    └── Terminal display
-
+                     ┌─────────────────────────────┐
+                     │ Bivariate Hawkes Order Flow │
+                     │ buy / sell event arrivals  │
+                     └─────────────┬───────────────┘
+                                   │
+                                   ▼
+┌─────────────────┐       ┌──────────────────────────┐
+│ HJB-QVI Solver  │──────►│ HJB Policy / QuoteEngine │
+│ inventory grid  │       │ bid δ, ask δ, intervene  │
+└─────────────────┘       └────────────┬─────────────┘
+                                      │
+                                      ▼
+                           ┌─────────────────────────┐
+                           │ Event-driven Simulator  │
+                           │ fills · inventory · PnL │
+                           │ markouts / risk         │
+                           └────────────┬────────────┘
+                                        │
+                                        ▼
+                             ┌──────────────────────┐
+                             │ Monte Carlo Report   │
+                             │ risk / return / AUC  │
+                             │ latency / artefacts  │
+                             └──────────────────────┘
 ```
 
-## Results
+The repository also contains the earlier merged upstream-derived implementation under `smmSrc/`, `includes/`, and `smmPython/`. The `research/` build is the supported path for the portfolio experiment because it gives the project one clean mathematical and benchmarking entry point.
 
-Figure 1 show results of a simulation using the following parameters:
+## Quick start
 
-* gamma: 0.1
-* sigma: 2
-* T: 1
-* k: 1.5
-* M: 0.5
-
-The first chart shows price, indifference price and bid, ask quotes evolution. The second chart shows the profit and loss evolution. The last chart shows the inventory evolution.
-
-Figure 2 shows the distribution of PnL over 1000 simulations.
-
----
-
-# Part II: Hawkes Processes & Microstructure Simulation
-
-## At a Glance
-
-* **Deterministic order book core** – Modern C++20 engine with price-Time priority kept Intentionally readable for experimentation.
-* **Shared Hawkes kernels** – Exponential and power-law intensity implementations exposed to both C++ and Python.
-* **Analytics & visualization** – Python package with thinning simulators, diagnostics, plots, and export utilities.
-* **Deterministic backtester** – C++ order book bridged into Python for reproducible order/fill replays and structured metrics.
-* **Interactive Streamlit app** – Visualise timelines, compare kernels, and download simulated order flow.
-
-## Architecture & Data Flow
-
-The simulator stitches together four stages, mirroring the reference architecture described by Cartea et al. (2015) and Gatheral & Schied (2013):
-
-1. **Hawkes-driven order flow** – exponential/power-law kernels Generate clustered market/limit-order timing scenarios. Timeline plots (above) illustrate self-excitation during liquidity shocks.
-2. **Deterministic matching engine** – the C++20 order book enforces price-Time priority and stores resting orders in intrusive FIFO lists at each price level.
-3. **Risk, PnL, and backtesting services** – Python orchestrators Replay fills, compute realised/unrealised PnL, and Stream metrics to dashboards.
-4. **Visualization & research surfaces** – notebooks and Streamlit panels expose the same artefacts for exploratory analysis or reporting.
-
-### How data moves through the stack
-
-| Stage | Input | Output | Notes |
-| --- | --- | --- | --- |
-| Feed ingestion | Hawkes samples / recorded CSV | Normalised event arrays | Supports Binance, LOBSTER, and synthetic datasets. |
-| Matching | Feed events, strategy orders | Executions, book snapshots | Deterministic, regression-tested (`tests/order_tests.cpp`). |
-| Risk engine | Executions, snapshots | Inventory, PnL, alerts | Snapshots logged under `logs/` for dashboards. |
-| Analytics | Risk snapshots, raw fills | Plots, CSVs, Streamlit widgets | Artefacts saved in `results/week*/`. |
-
-## Illustrated Analytics
-
-* **Intensity tracking** – exponential kernels adapt quickly to surges, while power-law kernels retain memory. The figures above help compare how different λ choices affect self-excitation.
-* **Autocorrelation diagnostics** – arrivals ACFs quantify clustering. Values closer to zero after a few bins suggest weaker residual dependence; persistent autocorrelation suggests the need for heavier tails.
-
-* **Goodness-of-fit diagnostics** – rescaled QQ and KS plots diagnose how Close fitted or simulated arrivals are to the exponential residual benchmark.
-
-### Prerequisites
-
-* CMake >= 3.15 and a C++20-capable compiler (Clang, GCC, or MSVC).
-* Python 3.10+ with `pip` for the analytics layer and Streamlit app.
-
-### Build the C++ Simulator
+### C++
 
 ```bash
-cmake -S . -B build/release -DCMAKE_BUILD_TYPE=Release
-cmake --build build/release --target hft_sim
-./build/release/hft_sim
-
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+./build/research/smm_research 100 results
 ```
 
-### Run the Hawkes Example (C++)
+### Python report
 
 ```bash
-cmake --build build/release --target hawkes_example
-./build/release/hawkes_example
-
-```
-
-### Execute Tests
-
-```bash
-cmake -S . -B build/tests -DHFT_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/tests --target order_tests
-ctest --test-dir build/tests --output-on-failure
-
-```
-
-### Explore the Python Package & Demos
-
-```bash
-cd python
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-MPLCONFIGDIR=.matplotlib python3 -m demo
-
+pip install -r python/requirements.txt
+python3 scripts/run_research.py --runs 100
 ```
 
-## Interactive Streamlit App
+The Python wrapper rebuilds the C++ target, runs the unit tests, executes the Monte Carlo experiment, and generates the two report plots.
 
-Launch the pedagogy-first Streamlit interface to experiment with Hawkes processes visually:
+## Default experiment
 
-```bash
-cd python
-streamlit run streamlit_app.py
+The canonical configuration is `configs/research_default.json`:
 
+| Parameter | Value |
+|---|---:|
+| HJB risk aversion `γ` | 0.05 |
+| Mid-price volatility `σ` | 0.20 |
+| Arrival scale `A` | 80 |
+| Arrival decay `k` | 40 |
+| Liquidation cost | 0.005 |
+| Inventory grid | -25 … +25 |
+| Horizon | 10 s |
+| FDM step | 0.02 s |
+| Hawkes `μ_sell / μ_buy` | 70 / 50 s⁻¹ |
+| Hawkes same-side excitation | 5.2 |
+| Hawkes cross-side excitation | 0.3 |
+| Hawkes decay `β` | 8.0 |
+| Monte Carlo paths | 100 |
+
+## Measured result from the checked-in run
+
+The checked-in result (`results/research_run.json`) was generated from the configuration above on the current CPU build.
+
+| Metric | HJB-QVI | Fixed spread |
+|---|---:|---:|
+| Mean RMS inventory | **18.6295** | 20.4411 |
+| Mean absolute inventory | **16.1995** | 19.4099 |
+| Mean PnL | -581.69 | -549.13 |
+| PnL standard deviation | **85.91** | 105.21 |
+| Mean adverse-selection markout | 1.692 bps | 1.649 bps |
+| p95 absolute inventory | 25 | 25 |
+
+The HJB-QVI controller therefore reduced mean RMS inventory by **8.86%** in this particular asymmetric, clustered-flow simulation. It also produced lower PnL in this configuration. That trade-off is intentionally visible in the report instead of being hidden behind a single performance number.
+
+### Microstructure prediction
+
+The Hawkes next-event sell-direction predictor achieved **0.5563 AUC** over **2,298,582** next-event examples generated by the configured Hawkes process. This is a simulation result, not an empirical claim about a real exchange feed.
+
+### Low-latency path
+
+The checked-in run measured:
+
+- HJB FDM policy solve: **~0.66 ms**
+- Quote lookup median: **~9.9 ns** per call
+- Quote lookup p99: **~21.5 ns** per call
+
+The compiler's GCC vectorization diagnostics also reported the HJB inventory loop as vectorized using 32-byte and 16-byte vectors under the benchmark build.
+
+The numbers above are machine-dependent and should be re-run before being presented as a hardware-independent benchmark.
+
+## Reproducibility and outputs
+
+`results/` contains:
+
+- `research_run.json` — complete experiment metrics
+- `policy_t0.csv` — inventory-dependent quote distances at `t = 0`
+- `sample_hawkes_events.csv` — first reproducible event path
+- `python_summary.json` — compact derived metrics
+- `policy_skew.png` — quote-skew visualization
+- `hawkes_events.png` — Hawkes event timeline
+
+The random seeds are deterministic in the C++ runner (`1000 + run_id`) so the Monte Carlo comparison uses the same event paths for both controllers.
+
+## Tests
+
+The C++ test suite covers:
+
+- HJB solution dimensions and finite values
+- quote-distance lower bounds
+- Hawkes branching-ratio stability
+- event-time monotonicity
+- non-empty Hawkes simulation
+
+The CI workflow additionally installs Eigen and compiles the Eigen-backed spectral-radius path.
+
+## Upstream provenance
+
+The repository was originally assembled from these three upstream projects, as recorded by the supplied project configuration:
+
+1. `thibault-charbonnier/market-making-engine`
+2. `fedecaccia/avellaneda-stoikov`
+3. `sohaibelkarmi/High-Frequency-Trading-Simulator`
+
+The clean research layer in this branch is an integration/reference implementation built on top of that repository's existing merged tree. It does not claim the upstream authors wrote this combined experiment.
+
+See [`docs/UPSTREAM.md`](docs/UPSTREAM.md) for the source map and separation of responsibilities.
+
+## Repository hygiene
+
+The supplied historical merge utility contains functionality that rewrites Git author/committer timestamps to a requested historical interval. This research branch does **not** use that behavior. New commits should use their real creation dates.
+
+## Project layout
+
+```text
+include/smm/          Public research interfaces
+src/                  HJB-QVI + Hawkes implementations
+research/             Monte Carlo simulator and CMake target
+tests/                C++ unit tests
+scripts/              Reproducible Python runner / plotting
+configs/              Canonical experiment configuration
+docs/                 Mathematics, benchmark methodology, provenance
+results/              Actual generated experiment outputs
+smmSrc/               Earlier merged/upstream-derived implementation
+smmPython/            Earlier merged Python implementation
 ```
 
-Inside the app you can:
+## Reference notes
 
-* Pick preset market regimes (Calm Market, Frenzy, Flash Crash) or define your own parameters.
-* Toggle between exponential and power-law kernels and overlay comparison runs.
-* Inspect branching ratios with criticality warnings and view order-size histograms.
-
-The app bridges directly to the native C++ kernels via `bridge_utils.Ensure_bridge_path`, so ensure build artefacts exist under `build/lib`.
-
-## Research Benchmarks
-
-### Prepare Datasets
-
-* **Binance BTCUSDT**
-
-```bash
-  python scripts/pack_binance_npz.py \
-    --input-dir data/runs/events \
-    --symbol BTCUSDT \
-    --days 2025-09-21 \
-    --output data/runs/events/binance_btcusdt_2025-09-21.npz
-  
-
-```
-
-* **LOBSTER AAPL**
-
-```bash
-  python scripts/preprocess_lobster.py \
-    --messages data/lobster/LOBSTER_SampleFile_AAPL_2012-06-21_10/\
-      AAPL_2012-06-21_34200000_57600000_message_10.csv \
-    --symbol AAPL \
-    --date 2012-06-21 \
-    --output data/runs/events/lobster_aapl_2012-06-21_sample.npz
-  
-
-```
-
-### Train GRU and Transformer Backbones
-
-```bash
-export PYTHONPATH=.
-PYTHONPATH=. python experiments/run_matrix.py \
-  --Config experiments/configs/binance_backbones.json \
-  --results-dir experiments/results \
-  --run-dir experiments/runs
-
-PYTHONPATH=. python experiments/run_matrix.py \
-  --Config experiments/configs/lobster_backbones.json \
-  --results-dir experiments/results \
-  --run-dir experiments/runs
-
-```
-
-Each run logs deterministic seeds and checkpoints. Artefacts land in `experiments/runs/<experiment_id>/`:
-
-* `metrics.json` summarises Train/Val/Test NLL, MAE, accuracy, KS stats, runtime, and parameter count.
-* `curves/` stores CSVs for loss and calibration bins.
-* `figs/` holds paper-ready loss/QQ/KS/calibration plots.
-
-## Theory Snapshot
-
-* **Limit-order dynamics** — the C++ core models submissions, cancellations, and executions with price-Time priority, letting you observe queue evolution as a discrete-event system.
-* **Hawkes intensity** — arrivals follow `λ(t) = μ + \sum_i φ(t - T_i, V_i)`, capturing self-excitation where past trades raise the probability of near-future activity.
-* **Kernel choices** — the exponential kernel `φ(u,v)=α v e^{-βu}` yields Markovian state updates; the power-law alternative `φ(u,v)=α v (u+c)^{-γ}` captures longer memory.
-* **Branching ratio** — expected offspring per event, `n = E[φ]`; keeping `n < 1` gives the standard subcritical Hawkes regime with finite stationary Mean intensity.
-
-## License
-
-This project is licensed under the Pirate-Emperor License. See the [LICENSE](LICENSE) file for details.
-
-## Author
-
-**Pirate-Emperor**
-
-[![Twitter](https://skillicons.dev/icons?i=twitter)](https://twitter.com/PirateKingRahul)
-[![Discord](https://skillicons.dev/icons?i=discord)](https://discord.com/users/1200728704981143634)
-[![LinkedIn](https://skillicons.dev/icons?i=linkedin)](https://www.linkedin.com/in/piratekingrahul)
-
-[![Reddit](https://img.shields.io/badge/Reddit-FF5700?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/u/PirateKingRahul)
-[![Medium](https://img.shields.io/badge/Medium-42404E?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@piratekingrahul)
-
-- GitHub: [Pirate-Emperor](https://github.com/Pirate-Emperor)
-- Reddit: [PirateKingRahul](https://www.reddit.com/u/PirateKingRahul/)
-- Twitter: [PirateKingRahul](https://twitter.com/PirateKingRahul)
-- Discord: [PirateKingRahul](https://discord.com/users/1200728704981143634)
-- LinkedIn: [PirateKingRahul](https://www.linkedin.com/in/piratekingrahul)
-- Skype: [Join Skype](https://join.skype.com/invite/yfjOJG3wv9Ki)
-- Medium: [PirateKingRahul](https://medium.com/@piratekingrahul)
-
-Thank you for visiting this project!
-
----
+This project is intended for research and interview discussion. The important engineering distinction is between the *mathematical model*, the *simulation environment*, and the *latency benchmark*. None of those measurements should be interpreted as live trading performance without an exchange-grade market-data and execution environment.
