@@ -1,0 +1,41 @@
+{
+  "runs": 100,
+  "hjb": {
+    "gamma": 0.05,
+    "sigma": 0.2,
+    "arrival_A": 80,
+    "arrival_k": 40,
+    "q_max": 25,
+    "time_steps": 501
+  },
+  "hjb_fdm_solve_ms": 0.663902,
+  "hawkes": {
+    "branching_ratio": 0.6875,
+    "stationary_sell_intensity": 217.8064516,
+    "stationary_buy_intensity": 166.1935484,
+    "next_sell_direction_auc": 0.5563327754,
+    "prediction_samples": 2298582
+  },
+  "quote_engine": {
+    "median_ns": 9.9278,
+    "p99_ns": 21.4848
+  },
+  "strategies": {
+    "hjb_qvi": {
+      "mean_pnl": -581.6929076,
+      "std_pnl": 85.91442879,
+      "mean_rms_inventory": 18.62949748,
+      "mean_abs_inventory": 16.19952335,
+      "mean_adverse_selection_bps": 1.692012303,
+      "p95_abs_inventory": 25
+    },
+    "fixed_spread": {
+      "mean_pnl": -549.1274,
+      "std_pnl": 105.2080873,
+      "mean_rms_inventory": 20.44107835,
+      "mean_abs_inventory": 19.40992887,
+      "mean_adverse_selection_bps": 1.649023877,
+      "p95_abs_inventory": 25
+    }
+  }
+}
