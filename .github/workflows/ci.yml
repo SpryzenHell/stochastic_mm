@@ -1,4 +1,5 @@
 name: research-ci
+
 on:
   push:
   pull_request:
@@ -7,14 +8,31 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install Eigen
         run: sudo apt-get update && sudo apt-get install -y libeigen3-dev
+
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+
       - name: Build
         run: cmake --build build --parallel
+
       - name: Unit tests
         run: ctest --test-dir build --output-on-failure
+
+      - name: Python dependencies
+        run: python -m pip install -r python/requirements.txt
+
+      - name: Python syntax
+        run: python -m compileall python scripts
+
       - name: End-to-end research run
-        run: ./build/research/smm_research 25 results/ci
+        run: python scripts/run_research.py --runs 10 --output results/ci

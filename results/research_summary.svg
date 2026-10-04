@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
+<rect width="960" height="520" fill="white"/>
+<text x="60" y="55" font-family="Arial" font-size="28" font-weight="600">Canonical research run</text>
+<text x="60" y="84" font-family="Arial" font-size="15" fill="#555">Values from results/research_run.json</text>
+<rect x="60" y="125" width="840" height="64" fill="#f7f7f7" stroke="#ddd"/>
+<text x="85" y="165" font-family="Arial" font-size="17">Monte Carlo paths</text><text x="520" y="165" text-anchor="middle" font-family="Arial" font-size="19" font-weight="600">100</text>
+<rect x="60" y="189" width="840" height="64" fill="white" stroke="#ddd"/>
+<text x="85" y="229" font-family="Arial" font-size="17">RMS inventory reduction</text><text x="520" y="229" text-anchor="middle" font-family="Arial" font-size="19" font-weight="600">8.86%</text>
+<rect x="60" y="253" width="840" height="64" fill="#f7f7f7" stroke="#ddd"/>
+<text x="85" y="293" font-family="Arial" font-size="17">Hawkes next-event direction AUC</text><text x="520" y="293" text-anchor="middle" font-family="Arial" font-size="19" font-weight="600">0.5563</text>
+<rect x="60" y="317" width="840" height="64" fill="white" stroke="#ddd"/>
+<text x="85" y="357" font-family="Arial" font-size="17">FDM policy solve</text><text x="520" y="357" text-anchor="middle" font-family="Arial" font-size="19" font-weight="600">0.6639 ms</text>
+<rect x="60" y="381" width="840" height="64" fill="#f7f7f7" stroke="#ddd"/>
+<text x="85" y="421" font-family="Arial" font-size="17">Quote p99</text><text x="520" y="421" text-anchor="middle" font-family="Arial" font-size="19" font-weight="600">21.48 ns</text>
+<text x="60" y="485" font-family="Arial" font-size="13" fill="#666">Synthetic experiment. Hardware and parameters affect latency and risk results.</text>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
+<rect width="960" height="520" fill="white"/>
+<rect x="55" y="40" width="850" height="420" rx="8" fill="#151515"/>
+<circle cx="78" cy="63" r="6" fill="#777"/><circle cx="98" cy="63" r="6" fill="#777"/><circle cx="118" cy="63" r="6" fill="#777"/>
+<text x="80" y="100" font-family="monospace" font-size="16" fill="#ddd">canonical research run</text>
+<text x="80" y="132" font-family="monospace" font-size="15" fill="#eee">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release</text>
+<text x="80" y="154" font-family="monospace" font-size="15" fill="#eee">cmake --build build --parallel</text>
+<text x="80" y="176" font-family="monospace" font-size="15" fill="#eee">ctest --test-dir build --output-on-failure</text>
+<text x="80" y="198" font-family="monospace" font-size="15" fill="#eee">100 paths completed</text>
+<text x="80" y="242" font-family="monospace" font-size="15" fill="#eee">FDM solve:             0.663902 ms</text>
+<text x="80" y="264" font-family="monospace" font-size="15" fill="#eee">Hawkes branching:      0.6875</text>
+<text x="80" y="286" font-family="monospace" font-size="15" fill="#eee">Direction AUC:          0.5563</text>
+<text x="80" y="308" font-family="monospace" font-size="15" fill="#eee">Quote median:          9.9278 ns</text>
+<text x="80" y="330" font-family="monospace" font-size="15" fill="#eee">Quote p99:             21.4848 ns</text>
+<text x="80" y="374" font-family="monospace" font-size="15" fill="#eee">HJB-QVI RMS inventory:  18.6295</text>
+<text x="80" y="396" font-family="monospace" font-size="15" fill="#eee">Fixed spread RMS:       20.4411</text>
+<text x="80" y="418" font-family="monospace" font-size="15" fill="#eee">RMS reduction:           8.8625%</text>
+</svg>
