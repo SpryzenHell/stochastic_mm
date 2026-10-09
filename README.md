@@ -1,8 +1,6 @@
 # Stochastic Market Maker
 
-<p align="center">
-  <img src="main.png" alt="Stochastic market maker project overview" width="820">
-</p>
+**Author:** Pirate-Emperor
 
 This repository contains a C++/Python implementation of a stochastic market-making experiment built around three pieces:
 
@@ -18,6 +16,7 @@ The default experiment is synthetic and does not require market-data files, API 
 - [Requirements](#requirements)
 - [Run it from a clean clone](#run-it-from-a-clean-clone)
 - [Run the research experiment](#run-the-research-experiment)
+- [Run a parameter sweep](#run-a-parameter-sweep)
 - [Open the local dashboard](#open-the-local-dashboard)
 - [Outputs](#outputs)
 - [Canonical experiment](#canonical-experiment)
@@ -27,7 +26,6 @@ The default experiment is synthetic and does not require market-data files, API 
 - [Tests and CI](#tests-and-ci)
 - [Troubleshooting](#troubleshooting)
 - [Scope and limitations](#scope-and-limitations)
-- [Upstream repositories](#upstream-repositories)
 
 ## What is implemented
 
@@ -261,6 +259,20 @@ python scripts/run_research.py --runs 10 --output results/smoke_test
 
 For the reference experiment, use 100 paths.
 
+## Run a parameter sweep
+
+A parameter sweep checks how risk aversion and liquidation cost affect inventory risk and PnL. The default grid has 20 settings and runs 25 paths per setting (500 paths total). The same seed set is used for every setting, so each setting is tested against the same simulated event paths.
+
+```bash
+python scripts/run_sensitivity.py --runs 25 --gamma-values 0.01,0.02,0.05,0.10,0.20 --liquidation-costs 0.001,0.005,0.010,0.020 --output results/sensitivity
+```
+
+The script writes a CSV table, a JSON report with confidence intervals, three heatmaps, and a PnL-versus-inventory-risk plot. The confidence intervals are estimates, not guarantees. All scenarios use synthetic order flow; timing results depend on the machine.
+
+<p align="center">
+  <img src="results/sensitivity_design.svg" alt="Twenty-setting paired parameter sweep design" width="960">
+</p>
+
 ## Open the local dashboard
 
 The repository also contains a small Streamlit dashboard for inspecting a completed run.
@@ -306,7 +318,8 @@ results/run_100/
 ├── policy_skew.png
 ├── inventory_comparison.png
 ├── latency_benchmark.png
-└── hawkes_events.png
+├── hawkes_events.png
+└── terminal_snapshot.svg
 ```
 
 ### What each file contains
@@ -321,6 +334,7 @@ results/run_100/
 | `inventory_comparison.png` | Mean RMS inventory comparison |
 | `latency_benchmark.png` | FDM and quote-path timing measurements |
 | `hawkes_events.png` | Hawkes event timeline |
+| `terminal_snapshot.svg` | Large-text SVG summary written from the run JSON |
 
 The checked-in files under `results/` are the reference artifacts. A new experiment should normally be written to another directory such as `results/run_100` so that the reference results are not overwritten.
 
@@ -396,10 +410,6 @@ The quote benchmark is a hot-cache in-process function benchmark. It is not an e
 
 The images below are all tied to the checked-in reference data.
 
-### Project overview
-
-The image at the top of this README, `main.png`, is a project overview image. It is separate from the numerical figures and contains no explanatory text.
-
 ### HJB-QVI policy
 
 The following figure is the policy visualization produced from the reference `policy_t0.csv`.
@@ -444,10 +454,10 @@ The underlying event-level data is produced by the C++ runner as `sample_hawkes_
 
 ### Console summary
 
-The following is a formatted view of the canonical numerical output rather than an additional simulation.
+This is a high-contrast, readable view of recorded values. It is not a live terminal screenshot or an additional simulation.
 
 <p align="center">
-  <img src="results/cli_output.svg" alt="Canonical run numerical summary" width="760">
+  <img src="results/cli_output.svg" alt="Readable terminal-style reference run output" width="960">
 </p>
 
 ## Model
@@ -516,11 +526,13 @@ The supported research implementation is intentionally small:
 ├── configs/
 │   └── research_default.json
 ├── docs/
+│   ├── EXPERIMENTS.md
 │   ├── RESEARCH_METHOD.md
-│   └── UPSTREAM.md
+│   └── architecture.md
 ├── include/smm/
 │   ├── hawkes.hpp
-│   └── hjb_qvi.hpp
+│   ├── hjb_qvi.hpp
+│   └── metrics.hpp
 ├── python/
 │   ├── dashboard.py
 │   └── requirements.txt
@@ -530,14 +542,15 @@ The supported research implementation is intentionally small:
 │   └── sim.hpp
 ├── scripts/
 │   ├── check_vectorization.sh
-│   └── run_research.py
+│   ├── run_research.py
+│   ├── run_sensitivity.py
+│   └── validate_artifacts.py
 ├── src/
 │   ├── hawkes.cpp
 │   ├── hjb_qvi.cpp
 │   └── research_runner.cpp
 ├── tests/
 │   └── unit.cpp
-├── main.png
 └── results/
 ```
 
@@ -549,7 +562,7 @@ includes/
 smmPython/
 ```
 
-That code is retained for provenance and for the other experiments already present in the repository. It is not required for the clean research build documented above.
+Older experiments remain available in those folders. They are not needed for the clean research build documented above.
 
 ## Tests and CI
 
@@ -559,22 +572,13 @@ The local test command is:
 ctest --test-dir build --output-on-failure
 ```
 
-The unit test checks:
+The C++ regression tests check the full HJB grid, finite value and policy values, quote bounds, inventory boundary behavior, invalid inputs, safe quote clamping, Hawkes stability, stationary intensity, fixed-seed repeatability, event timestamps and types, supercritical cases, and hand-checked ROC AUC examples including tied scores. The checks remain active in Release builds.
 
-- HJB solution dimensions,
-- finite value-function entries,
-- quote-distance bounds,
-- Hawkes stability for the default test parameters, and
-- monotonic event timestamps.
+<p align="center">
+  <img src="results/test_coverage.svg" alt="Automated test coverage overview" width="960">
+</p>
 
-GitHub Actions also performs:
-
-1. checkout,
-2. Eigen installation,
-3. CMake configuration,
-4. build,
-5. CTest, and
-6. a 25-path end-to-end research run.
+GitHub Actions tests both the Eigen-enabled and no-Eigen builds. It also checks Python syntax, verifies the checked-in data and SVG figures, runs the full experiment with 25 paths, and performs a 20-setting parameter sweep with 500 simulated paths. The generated CSV, JSON, and figures are saved as a workflow artifact.
 
 The CI workflow is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
@@ -662,18 +666,6 @@ In particular:
 - latency depends on compiler, processor, operating system and system load.
 
 Any empirical extension using LOBSTER, Binance or another data source should be treated as a separate experiment with its own data-processing and validation code.
-
-## Upstream repositories
-
-The original project configuration identifies these three repositories:
-
-- [market-making-engine](https://github.com/thibault-charbonnier/market-making-engine)
-- [avellaneda-stoikov](https://github.com/fedecaccia/avellaneda-stoikov)
-- [High-Frequency-Trading-Simulator](https://github.com/sohaibelkarmi/High-Frequency-Trading-Simulator)
-
-The current repository keeps the earlier merged implementation, while the supported research path described in this README is implemented directly under `src/`, `include/smm/`, `research/`, and `scripts/`.
-
-More details are in [`docs/UPSTREAM.md`](docs/UPSTREAM.md).
 
 ## Notes on generated results
 

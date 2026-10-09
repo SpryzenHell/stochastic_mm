@@ -1,18 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
-<rect width="960" height="520" fill="white"/>
-<rect x="55" y="40" width="850" height="420" rx="8" fill="#151515"/>
-<circle cx="78" cy="63" r="6" fill="#777"/><circle cx="98" cy="63" r="6" fill="#777"/><circle cx="118" cy="63" r="6" fill="#777"/>
-<text x="80" y="100" font-family="monospace" font-size="16" fill="#ddd">canonical research run</text>
-<text x="80" y="132" font-family="monospace" font-size="15" fill="#eee">cmake -S . -B build -DCMAKE_BUILD_TYPE=Release</text>
-<text x="80" y="154" font-family="monospace" font-size="15" fill="#eee">cmake --build build --parallel</text>
-<text x="80" y="176" font-family="monospace" font-size="15" fill="#eee">ctest --test-dir build --output-on-failure</text>
-<text x="80" y="198" font-family="monospace" font-size="15" fill="#eee">100 paths completed</text>
-<text x="80" y="242" font-family="monospace" font-size="15" fill="#eee">FDM solve:             0.663902 ms</text>
-<text x="80" y="264" font-family="monospace" font-size="15" fill="#eee">Hawkes branching:      0.6875</text>
-<text x="80" y="286" font-family="monospace" font-size="15" fill="#eee">Direction AUC:          0.5563</text>
-<text x="80" y="308" font-family="monospace" font-size="15" fill="#eee">Quote median:          9.9278 ns</text>
-<text x="80" y="330" font-family="monospace" font-size="15" fill="#eee">Quote p99:             21.4848 ns</text>
-<text x="80" y="374" font-family="monospace" font-size="15" fill="#eee">HJB-QVI RMS inventory:  18.6295</text>
-<text x="80" y="396" font-family="monospace" font-size="15" fill="#eee">Fixed spread RMS:       20.4411</text>
-<text x="80" y="418" font-family="monospace" font-size="15" fill="#eee">RMS reduction:           8.8625%</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="760" viewBox="0 0 1360 760">
+<rect width="1360" height="760" fill="#f0f3f7"/>
+<text x="48" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#17253a">Stochastic Market Maker</text>
+<text x="48" y="78" font-family="Arial, sans-serif" font-size="17" fill="#56657a">Recorded reference run · formatted view, not a terminal screenshot</text>
+<rect x="40" y="110" width="1280" height="610" rx="14" fill="#111923" stroke="#354254" stroke-width="2"/>
+<path d="M40 124 Q40 110 54 110 H1306 Q1320 110 1320 124 V151 H40 Z" fill="#263548"/>
+<circle cx="65" cy="131" r="6" fill="#ff6b6b"/><circle cx="87" cy="131" r="6" fill="#f6c85f"/><circle cx="109" cy="131" r="6" fill="#6bcf8b"/>
+<text x="142" y="137" font-family="Arial, sans-serif" font-size="17" fill="#e5edf7">Experiment output · canonical record</text>
+<text x="76" y="190" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#c5d9ff">$ python scripts/run_research.py --runs 100 --output results/run_100</text>
+<text x="76" y="228" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#8fe3b0">[PASS] 100 Monte Carlo paths completed</text>
+<text x="76" y="266" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">HJB FDM solve:              0.663902 ms</text>
+<text x="76" y="304" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">Hawkes branching ratio:     0.687500</text>
+<text x="76" y="342" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">Next-sell direction AUC:    0.556333</text>
+<text x="76" y="380" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">Quote lookup median:        9.9278 ns</text>
+<text x="76" y="418" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">Quote lookup p99:           21.4848 ns</text>
+<text x="76" y="456" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">HJB-QVI mean PnL:           -581.693</text>
+<text x="76" y="494" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">Fixed-spread mean PnL:      -549.127</text>
+<text x="76" y="532" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">HJB-QVI mean RMS inventory: 18.629</text>
+<text x="76" y="570" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#eeeeee">Fixed-spread mean RMS inv.: 20.441</text>
+<text x="76" y="608" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#8fe3b0">RMS inventory change:       8.862%</text>
+<text x="76" y="646" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="#c7c7c7">Files: research_run.json, policy_t0.csv, sample_hawkes_events.csv</text>
 </svg>

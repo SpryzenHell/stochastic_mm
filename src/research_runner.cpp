@@ -1,5 +1,6 @@
 #include "smm/hawkes.hpp"
 #include "smm/hjb_qvi.hpp"
+#include "smm/metrics.hpp"
 #include "sim.hpp"
 #include <chrono>
 #include <filesystem>
@@ -17,30 +18,17 @@ static void write_json(const std::string& path, const std::string& json) {
     f << json;
 }
 
-static double roc_auc(const std::vector<double>& score, const std::vector<int>& label) {
-    if (score.size() != label.size() || score.empty()) return 0.5;
-    std::vector<std::size_t> idx(score.size());
-    for (std::size_t i = 0; i < idx.size(); ++i) idx[i] = i;
-    std::stable_sort(idx.begin(), idx.end(), [&](std::size_t a, std::size_t b) {
-        return score[a] < score[b];
-    });
-    double rank_sum = 0.0;
-    std::size_t pos = 0, neg = 0;
-    for (std::size_t r = 0; r < idx.size(); ++r) {
-        if (label[idx[r]]) {
-            rank_sum += static_cast<double>(r + 1);
-            ++pos;
-        } else {
-            ++neg;
-        }
-    }
-    if (!pos || !neg) return 0.5;
-    return (rank_sum - static_cast<double>(pos) * (pos + 1) / 2.0) /
-           (static_cast<double>(pos) * static_cast<double>(neg));
-}
 
 int main(int argc, char** argv) {
+    if (argc > 5) {
+        std::cerr << "Usage: smm_research [runs] [output_dir] [gamma] [liquidation_cost]\\n";
+        return 2;
+    }
     const std::size_t runs = argc > 1 ? static_cast<std::size_t>(std::stoul(argv[1])) : 100;
+    if (runs == 0 || runs > 100000) {
+        std::cerr << "runs must be between 1 and 100000\\n";
+        return 2;
+    }
     const std::string outdir = argc > 2 ? argv[2] : "results";
     std::filesystem::create_directories(outdir);
 
@@ -168,7 +156,7 @@ int main(int argc, char** argv) {
       << ", \"stationary_sell_intensity\": " << stationary[0]
       << ", \"stationary_buy_intensity\": " << stationary[1]
       << ", \"next_sell_direction_auc\": "
-      << roc_auc(hawkes_scores, hawkes_labels)
+      << smm::research::roc_auc(hawkes_scores, hawkes_labels)
       << ", \"prediction_samples\": " << hawkes_labels.size() << "},\n"
       << "  \"quote_engine\": {\"median_ns\": " << quote_median_ns
       << ", \"p99_ns\": " << quote_p99_ns << "},\n"

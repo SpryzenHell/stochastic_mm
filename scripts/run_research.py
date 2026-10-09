@@ -109,6 +109,47 @@ def make_plots(out: pathlib.Path) -> None:
     (out / "python_summary.json").write_text(json.dumps(summary, indent=2))
 
 
+
+def make_terminal_snapshot(out: pathlib.Path, data: dict) -> None:
+    """Write a readable SVG summary from the actual run JSON."""
+    from html import escape
+
+    qvi = data["strategies"]["hjb_qvi"]
+    base = data["strategies"]["fixed_spread"]
+    reduction = 100.0 * (base["mean_rms_inventory"] - qvi["mean_rms_inventory"]) / base["mean_rms_inventory"]
+    lines = [
+        ("$ python scripts/run_research.py --runs " + str(data["runs"]) + " --output results/run_100", "#c5d9ff"),
+        (f"[PASS] {data['runs']} Monte Carlo paths completed", "#8fe3b0"),
+        (f"HJB FDM solve:              {data['hjb_fdm_solve_ms']:.6f} ms", "#eeeeee"),
+        (f"Hawkes branching ratio:     {data['hawkes']['branching_ratio']:.6f}", "#eeeeee"),
+        (f"Next-sell direction AUC:    {data['hawkes']['next_sell_direction_auc']:.6f}", "#eeeeee"),
+        (f"Quote lookup median:        {data['quote_engine']['median_ns']:.4f} ns", "#eeeeee"),
+        (f"Quote lookup p99:           {data['quote_engine']['p99_ns']:.4f} ns", "#eeeeee"),
+        (f"HJB-QVI mean PnL:           {qvi['mean_pnl']:.3f}", "#eeeeee"),
+        (f"Fixed-spread mean PnL:      {base['mean_pnl']:.3f}", "#eeeeee"),
+        (f"HJB-QVI mean RMS inventory: {qvi['mean_rms_inventory']:.3f}", "#eeeeee"),
+        (f"Fixed-spread mean RMS inv.: {base['mean_rms_inventory']:.3f}", "#eeeeee"),
+        (f"RMS inventory change:       {reduction:.3f}%", "#8fe3b0" if reduction >= 0 else "#ff9d9d"),
+        ("Files: research_run.json, policy_t0.csv, sample_hawkes_events.csv", "#c7c7c7"),
+    ]
+    svg = [
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="760" viewBox="0 0 1360 760">',
+        '<rect width="1360" height="760" fill="#f0f3f7"/>',
+        '<text x="48" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#17253a">Stochastic Market Maker</text>',
+        '<text x="48" y="78" font-family="Arial, sans-serif" font-size="17" fill="#56657a">Readable run summary generated from the actual JSON output</text>',
+        '<rect x="40" y="110" width="1280" height="610" rx="14" fill="#111923" stroke="#354254" stroke-width="2"/>',
+        '<path d="M40 124 Q40 110 54 110 H1306 Q1320 110 1320 124 V151 H40 Z" fill="#263548"/>',
+        '<circle cx="65" cy="131" r="6" fill="#ff6b6b"/><circle cx="87" cy="131" r="6" fill="#f6c85f"/><circle cx="109" cy="131" r="6" fill="#6bcf8b"/>',
+        '<text x="142" y="137" font-family="Arial, sans-serif" font-size="17" fill="#e5edf7">Experiment output</text>',
+    ]
+    y = 190
+    for line, color in lines:
+        svg.append(f'<text x="76" y="{y}" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="{color}">{escape(line)}</text>')
+        y += 38
+    svg.extend(["</svg>", ""])
+    (out / "terminal_snapshot.svg").write_text("\n".join(svg), encoding="utf-8")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build and run the stochastic market maker research pipeline.")
     parser.add_argument("--runs", type=int, default=100, help="Number of Monte Carlo paths.")
@@ -164,6 +205,7 @@ def main() -> None:
     qvi = data["strategies"]["hjb_qvi"]
     base = data["strategies"]["fixed_spread"]
     reduction = 100.0 * (base["mean_rms_inventory"] - qvi["mean_rms_inventory"]) / base["mean_rms_inventory"]
+    make_terminal_snapshot(output, data)
 
     print("\nResearch run completed.")
     print(f"Output: {output}")

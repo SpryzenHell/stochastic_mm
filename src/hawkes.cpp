@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 #if defined(SMM_HAS_EIGEN)
 #include <Eigen/Dense>
@@ -10,7 +11,25 @@
 
 namespace smm::research {
 
-BivariateHawkes::BivariateHawkes(BivariateHawkesConfig config) : config_(config) {}
+BivariateHawkes::BivariateHawkes(BivariateHawkesConfig config) : config_(config) {
+    const double params[] = {
+        config_.mu_sell, config_.mu_buy, config_.alpha_ss, config_.alpha_sb,
+        config_.alpha_bs, config_.alpha_bb, config_.beta, config_.horizon
+    };
+    for (double x : params) {
+        if (!std::isfinite(x)) throw std::invalid_argument("Hawkes parameters must be finite");
+    }
+    if (config_.mu_sell < 0.0 || config_.mu_buy < 0.0) {
+        throw std::invalid_argument("Hawkes baseline intensities must be non-negative");
+    }
+    if (config_.alpha_ss < 0.0 || config_.alpha_sb < 0.0 ||
+        config_.alpha_bs < 0.0 || config_.alpha_bb < 0.0) {
+        throw std::invalid_argument("Hawkes excitation parameters must be non-negative");
+    }
+    if (config_.beta <= 0.0 || config_.horizon <= 0.0) {
+        throw std::invalid_argument("Hawkes beta and horizon must be positive");
+    }
+}
 
 double BivariateHawkes::branching_ratio() const noexcept {
 #if defined(SMM_HAS_EIGEN)
@@ -67,6 +86,7 @@ std::vector<HawkesEvent> BivariateHawkes::simulate(std::uint64_t seed) const {
         const double cand0 = config_.mu_sell + e0;
         const double cand1 = config_.mu_buy + e1;
         const double cand_total = cand0 + cand1;
+        if (cand_total <= 0.0) continue;
         if (uni(rng) <= cand_total / upper) {
             const bool sell = uni(rng) < cand0 / cand_total;
             out.push_back({t, static_cast<std::uint8_t>(sell ? 0 : 1)});

@@ -1,114 +1,53 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
+# Build output
+/build/
+/build-*/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
 *.o
 *.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+*.a
+*.lib
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
 *.exe
 *.out
 *.app
+*.pdb
+*.ilk
+*.dwo
 
-# Build directories
-build/
-cmake-build-*/
+# Python
+.venv/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
 
-# CMake files
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.cmake
+# Matplotlib and notebook caches
+**/mpl_cache/
+.matplotlib/
+.matplotlib_cache/
 
-# IDE files
+# Local experiment output
+/results/ci/
+/results/sensitivity_ci/
+/results/run_*/
+/results/sensitivity/
+
+# Editors and operating systems
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# macOS
 .DS_Store
 
-
-# --- Appended Integrated Chunk ---
-
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
-
-build/
-.matplotlib_cache/
-.tmp/
-pytest.log
-
-# Python virtual environments and caches
-.venv/
-python/.venv/
-.pytest_cache/
-__pycache__/
-
-# OS / tooling artefacts
-.DS_Store
-.matplotlib/
-*.ipynb_checkpoints/
+# Generated LaTeX build files
+*.aux
+*.fdb_latexmk
+*.fls
+main.log
