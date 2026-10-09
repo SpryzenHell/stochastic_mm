@@ -1,6 +1,6 @@
 {
-  "inventory_rms_reduction_pct": 8.862452552558217,
-  "hawkes_direction_auc": 0.5563327754,
-  "quote_p99_ns": 21.4848,
-  "fdm_solve_ms": 0.663902
+  "inventory_rms_reduction_pct": 74.49797115522529,
+  "hawkes_direction_auc": 0.5563327755,
+  "quote_p99_ns": 16.9876,
+  "fdm_solve_ms": 14.415143
 }

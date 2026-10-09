@@ -382,16 +382,16 @@ The checked-in reference run is stored in [`results/research_run.json`](results/
 
 | Metric | HJB-QVI | Fixed spread |
 | --- | ---: | ---: |
-| Mean RMS inventory | **18.6295** | 20.4411 |
-| Mean absolute inventory | **16.1995** | 19.4099 |
-| Mean PnL | -581.69 | -549.13 |
-| PnL standard deviation | **85.91** | 105.21 |
-| Mean adverse-selection markout | 1.692 bps | 1.649 bps |
-| p95 absolute inventory | 25 | 25 |
+| Mean RMS inventory | **5.2129** | 20.4411 |
+| Mean absolute inventory | **4.2655** | 19.4099 |
+| Mean PnL | -32.87 | -549.13 |
+| PnL standard deviation | 23.67 | 105.21 |
+| Mean adverse-selection markout | 1.370 bps | 1.649 bps |
+| p95 absolute inventory | 14 | 25 |
 
 The mean RMS inventory reduction is:
 
-`8.8625%`
+`74.4980%`
 
 This is a result for the configured synthetic regime. It should not be interpreted as an improvement that will hold for live market data.
 
@@ -415,9 +415,9 @@ The reference run measured:
 
 | Measurement | Value |
 | --- | ---: |
-| Full HJB FDM policy solve | 0.6639 ms |
-| Quote lookup median | 9.9278 ns |
-| Quote lookup p99 | 21.4848 ns |
+| Full HJB FDM policy solve | 14.4151 ms |
+| Quote lookup median | 13.1164 ns |
+| Quote lookup p99 | 16.9876 ns |
 
 The quote benchmark is a hot-cache in-process function benchmark. It is not an exchange round-trip or a complete order-management latency measurement.
 
@@ -430,7 +430,7 @@ The images below are all tied to the checked-in reference data.
 The following figure is the policy visualization produced from the reference `policy_t0.csv`.
 
 <p align="center">
-  <img src="results/policy_skew.png" alt="HJB-QVI policy skew" width="760">
+  <img src="results/policy_skew.svg" alt="HJB-QVI quote distance by inventory" width="900">
 </p>
 
 The plot shows how the bid and ask distances change with inventory at `t = 0`.
@@ -472,7 +472,7 @@ The underlying event-level data is produced by the C++ runner as `sample_hawkes_
 This is a high-contrast, readable view of recorded values. It is not a live terminal screenshot or an additional simulation.
 
 <p align="center">
-  <img src="results/cli_output.svg" alt="Readable terminal-style reference run output" width="960">
+  <img src="results/terminal_snapshot.svg" alt="Readable terminal-style reference run output" width="960">
 </p>
 
 ## Model

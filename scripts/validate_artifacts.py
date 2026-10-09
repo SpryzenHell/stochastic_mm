@@ -107,6 +107,10 @@ def main() -> int:
     reference = read_json(root / "results/research_run.json")
     summary = read_json(root / "results/python_summary.json")
     require(reference.get("runs", 0) >= 1, "reference result has no paths")
+    require(abs(reference["hjb"]["horizon"] - reference["hawkes"]["horizon"]) < 1e-12,
+            "reference HJB and Hawkes horizons do not match")
+    require(reference["hjb"]["time_steps"] == math.ceil(reference["hjb"]["horizon"] / reference["hjb"]["dt"]) + 1,
+            "reference HJB time-step count is inconsistent")
     for name in ("hjb_qvi", "fixed_spread"):
         require(name in reference.get("strategies", {}), f"missing strategy {name}")
         item = reference["strategies"][name]
@@ -132,9 +136,9 @@ def main() -> int:
             value = float(row[key])
             require(math.isfinite(value) and value >= 0.0, f"invalid {key} in policy CSV")
 
-    for name in ("inventory_comparison.svg", "latency_benchmark.svg",
-                 "hawkes_events.svg", "research_summary.svg", "cli_output.svg"):
-        validate_svg(root / "results" / name, terminal=(name == "cli_output.svg"))
+    for name in ("policy_skew.svg", "inventory_comparison.svg", "latency_benchmark.svg",
+                 "hawkes_events.svg", "research_summary.svg", "terminal_snapshot.svg"):
+        validate_svg(root / "results" / name, terminal=(name == "terminal_snapshot.svg"))
 
     if args.run_dir:
         run_dir = args.run_dir if args.run_dir.is_absolute() else root / args.run_dir

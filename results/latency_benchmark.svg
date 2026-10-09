@@ -1,16 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
-<rect width="960" height="520" fill="white"/>
-<text x="60" y="55" font-family="Arial" font-size="28" font-weight="600">Latency measurements</text>
-<text x="60" y="84" font-family="Arial" font-size="15" fill="#555">Canonical C++ run; logarithmic scale</text>
-<line x1="90" y1="420" x2="900" y2="420" stroke="#bbb"/>
-<line x1="90" y1="120" x2="90" y2="420" stroke="#bbb"/>
-<line x1="90" y1="420" x2="220" y2="420" stroke="#ddd"/><text x="220" y="445" text-anchor="middle" font-family="Arial" font-size="12">10 ns</text>
-<line x1="220" y1="420" x2="350" y2="420" stroke="#ddd"/><text x="350" y="445" text-anchor="middle" font-family="Arial" font-size="12">100 ns</text>
-<line x1="350" y1="420" x2="480" y2="420" stroke="#ddd"/><text x="480" y="445" text-anchor="middle" font-family="Arial" font-size="12">1 µs</text>
-<line x1="480" y1="420" x2="610" y2="420" stroke="#ddd"/><text x="610" y="445" text-anchor="middle" font-family="Arial" font-size="12">10 µs</text>
-<line x1="610" y1="420" x2="740" y2="420" stroke="#ddd"/><text x="740" y="445" text-anchor="middle" font-family="Arial" font-size="12">100 µs</text>
-<line x1="740" y1="420" x2="870" y2="420" stroke="#ddd"/><text x="870" y="445" text-anchor="middle" font-family="Arial" font-size="12">1 ms</text>
-<circle cx="229.6" cy="180" r="10" fill="#4c78a8"/><text x="110" y="180" font-family="Arial" font-size="17">Quote median</text><text x="880" y="185" text-anchor="end" font-family="Arial" font-size="16">9.9278 ns</text>
-<circle cx="264.2" cy="260" r="10" fill="#4c78a8"/><text x="110" y="260" font-family="Arial" font-size="17">Quote p99</text><text x="880" y="265" text-anchor="end" font-family="Arial" font-size="16">21.4848 ns</text>
-<circle cx="828.9" cy="340" r="10" fill="#4c78a8"/><text x="110" y="340" font-family="Arial" font-size="17">FDM policy solve</text><text x="880" y="345" text-anchor="end" font-family="Arial" font-size="16">0.663902 ms</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+<rect width="1200" height="700" fill="#f5f7fa"/>
+<text x="52" y="52" font-family="Arial,sans-serif" font-size="29" font-weight="700" fill="#192c42">Compute and quote timing</text>
+<text x="52" y="84" font-family="Arial,sans-serif" font-size="18" fill="#627286">Measured in one Release build · 100-path reference run</text>
+<rect x="52" y="132" width="1096" height="210" rx="15" fill="#172a3f"/>
+<text x="88" y="183" font-family="Arial,sans-serif" font-size="20" fill="#ced9e5">Full HJB finite-difference policy solve</text>
+<text x="88" y="258" font-family="Arial,sans-serif" font-size="50" font-weight="700" fill="#a8e3d6">14.415 ms</text>
+<text x="88" y="301" font-family="Arial,sans-serif" font-size="16" fill="#aab8c8">12,001 time rows × 51 inventory states</text>
+<rect x="52" y="374" width="528" height="230" rx="15" fill="#ffffff" stroke="#d5dee8"/>
+<text x="84" y="420" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#2b4056">Quote lookup · median</text>
+<text x="84" y="479" font-family="Arial,sans-serif" font-size="38" font-weight="700" fill="#2878a5">13.1164 ns</text>
+<rect x="84" y="512" width="282.00260000000003" height="18" rx="9" fill="#2878a5"/>
+<text x="84" y="566" font-family="Arial,sans-serif" font-size="16" fill="#66778a">Hot-cache in-process measurement</text>
+<rect x="620" y="374" width="528" height="230" rx="15" fill="#ffffff" stroke="#d5dee8"/>
+<text x="652" y="420" font-family="Arial,sans-serif" font-size="18" font-weight="700" fill="#2b4056">Quote lookup · p99</text>
+<text x="652" y="479" font-family="Arial,sans-serif" font-size="38" font-weight="700" fill="#d0643c">16.9876 ns</text>
+<rect x="652" y="512" width="365.2334" height="18" rx="9" fill="#d0643c"/>
+<text x="652" y="566" font-family="Arial,sans-serif" font-size="16" fill="#66778a">Not an exchange round-trip measurement</text>
+<text x="1148" y="666" text-anchor="end" font-family="Arial,sans-serif" font-size="13" fill="#7b8795">Timing varies with CPU, compiler and load</text></svg>
