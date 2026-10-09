@@ -32,10 +32,19 @@ int main(int argc, char** argv) {
     const std::string outdir = argc > 2 ? argv[2] : "results";
     std::filesystem::create_directories(outdir);
 
+    BivariateHawkesConfig hh;
+    hh.alpha_ss = 5.2;
+    hh.alpha_sb = 0.3;
+    hh.alpha_bs = 0.3;
+    hh.alpha_bb = 5.2;
+    hh.mu_sell = 70.0;
+    hh.mu_buy = 50.0;
+
     HjbQviConfig hc;
     hc.gamma = 0.05;
     hc.dt = 0.02;
     hc.liquidation_cost = 0.005;
+    hc.horizon = hh.horizon;
     if (argc > 3) hc.gamma = std::stod(argv[3]);
     if (argc > 4) hc.liquidation_cost = std::stod(argv[4]);
 
@@ -55,13 +64,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    BivariateHawkesConfig hh;
-    hh.alpha_ss = 5.2;
-    hh.alpha_sb = 0.3;
-    hh.alpha_bs = 0.3;
-    hh.alpha_bb = 5.2;
-    hh.mu_sell = 70.0;
-    hh.mu_buy = 50.0;
     BivariateHawkes hawkes(hh);
     const auto stationary = hawkes.stationary_intensity();
 
@@ -127,7 +129,7 @@ int main(int argc, char** argv) {
             const auto q = quote_engine.quote(
                 100.0 + (i % 101) * 0.0001,
                 (i % 31) - 15,
-                (i % 1000) * sol.dt);
+                (static_cast<std::size_t>(i) % sol.time_steps) * sol.dt);
             sink += q.bid + q.ask;
         }
         const auto t1 = std::chrono::steady_clock::now();
@@ -145,14 +147,28 @@ int main(int argc, char** argv) {
     j << std::setprecision(10);
     j << "{\n"
       << "  \"runs\": " << runs << ",\n"
+      << "  \"seed_start\": 1000,\n"
       << "  \"hjb\": {\"gamma\": " << hc.gamma
       << ", \"sigma\": " << hc.sigma
       << ", \"arrival_A\": " << hc.arrival_A
       << ", \"arrival_k\": " << hc.arrival_k
+      << ", \"liquidation_cost\": " << hc.liquidation_cost
+      << ", \"min_delta\": " << hc.min_delta
+      << ", \"max_delta\": " << hc.max_delta
+      << ", \"horizon\": " << hc.horizon
+      << ", \"dt\": " << sol.dt
       << ", \"q_max\": " << hc.q_max
       << ", \"time_steps\": " << sol.time_steps << "},\n"
       << "  \"hjb_fdm_solve_ms\": " << solve_ms << ",\n"
-      << "  \"hawkes\": {\"branching_ratio\": " << hawkes.branching_ratio()
+      << "  \"hawkes\": {\"mu_sell\": " << hh.mu_sell
+      << ", \"mu_buy\": " << hh.mu_buy
+      << ", \"alpha_ss\": " << hh.alpha_ss
+      << ", \"alpha_sb\": " << hh.alpha_sb
+      << ", \"alpha_bs\": " << hh.alpha_bs
+      << ", \"alpha_bb\": " << hh.alpha_bb
+      << ", \"beta\": " << hh.beta
+      << ", \"horizon\": " << hh.horizon
+      << ", \"branching_ratio\": " << hawkes.branching_ratio()
       << ", \"stationary_sell_intensity\": " << stationary[0]
       << ", \"stationary_buy_intensity\": " << stationary[1]
       << ", \"next_sell_direction_auc\": "

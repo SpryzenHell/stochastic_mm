@@ -352,8 +352,9 @@ The main parameters are:
 | Arrival decay (`k`) | 40 |
 | Liquidation cost | 0.005 |
 | Inventory range | -25 to +25 |
-| HJB horizon | 10 s |
+| HJB horizon | 60 s |
 | HJB time step | 0.02 s |
+| HJB time steps | 3,001 |
 | Hawkes baseline: sell | 70 s⁻¹ |
 | Hawkes baseline: buy | 50 s⁻¹ |
 | Same-side excitation | 5.2 |

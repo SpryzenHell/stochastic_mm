@@ -26,6 +26,18 @@ void throws_invalid(F&& fn, const std::string& message) {
     throw std::runtime_error(message);
 }
 
+void test_default_horizons_align() {
+    const smm::research::HjbQviConfig hjb;
+    const smm::research::BivariateHawkesConfig hawkes;
+    check(std::abs(hjb.horizon - hawkes.horizon) < 1e-12,
+          "default HJB and Hawkes horizons match");
+    check(std::abs(hjb.dt - 0.02) < 1e-12,
+          "default HJB time step matches the research configuration");
+    check(std::abs(hjb.gamma - 0.05) < 1e-12 &&
+          std::abs(hjb.liquidation_cost - 0.005) < 1e-12,
+          "default HJB parameters match the research configuration");
+}
+
 void test_hjb_grid_and_quotes() {
     smm::research::HjbQviConfig cfg;
     cfg.q_max = 8;
@@ -170,6 +182,7 @@ void test_roc_auc() {
 
 int main() {
     try {
+        test_default_horizons_align();
         test_hjb_grid_and_quotes();
         test_hjb_invalid_configs();
         test_hawkes();

@@ -48,6 +48,8 @@ The solver uses backward explicit stepping with
 
 The inventory dimension is kept deliberately small so the policy can be precomputed once and then served through a table lookup in the quote path.
 
+The default experiment uses the same 60-second horizon for both the HJB policy and the Hawkes path. This keeps the strategy inside the time range covered by its policy table.
+
 ## 5. Numerical limitation
 
 This is a reduced inventory-space stochastic-control approximation. It omits a separate continuous price dimension and does not claim the full original stochastic-control problem has been solved exactly. The repository exposes the approximation explicitly so that assumptions are visible in an interview or research discussion.

@@ -2,24 +2,24 @@
   "hjb": {
     "gamma": 0.05,
     "sigma": 0.2,
-    "arrival_A": 80.0,
-    "arrival_k": 40.0,
+    "arrival_A": 80,
+    "arrival_k": 40,
     "liquidation_cost": 0.005,
     "min_delta": 0.0005,
     "max_delta": 0.5,
-    "horizon": 10.0,
+    "horizon": 60,
     "dt": 0.02,
     "q_max": 25
   },
   "hawkes": {
-    "mu_sell": 70.0,
-    "mu_buy": 50.0,
+    "mu_sell": 70,
+    "mu_buy": 50,
     "alpha_ss": 5.2,
     "alpha_sb": 0.3,
     "alpha_bs": 0.3,
     "alpha_bb": 5.2,
-    "beta": 8.0,
-    "horizon": 60.0
+    "beta": 8,
+    "horizon": 60
   },
   "monte_carlo_runs": 100
 }

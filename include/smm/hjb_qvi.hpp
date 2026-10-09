@@ -5,15 +5,15 @@
 namespace smm::research {
 
 struct HjbQviConfig {
-    double gamma = 0.01;                 // CARA risk aversion
+    double gamma = 0.05;                 // CARA risk aversion
     double sigma = 0.20;                 // mid-price volatility scale
     double arrival_A = 80.0;             // baseline order-flow scale
     double arrival_k = 40.0;             // intensity decay in quote distance
-    double liquidation_cost = 0.02;      // cash penalty per unit when flattening
+    double liquidation_cost = 0.005;      // cash penalty per unit when flattening
     double min_delta = 0.0005;            // admissible quote distance
     double max_delta = 0.50;              // numerical cap
-    double horizon = 10.0;               // seconds
-    double dt = 0.01;                    // FDM time step
+    double horizon = 60.0;               // seconds
+    double dt = 0.02;                    // FDM time step
     int q_max = 25;                       // inventory grid [-q_max, q_max]
     int quote_stride = 1;                // retain every FDM policy row
 };
