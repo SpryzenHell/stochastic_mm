@@ -52,6 +52,7 @@ def validate_svg(path: pathlib.Path, terminal: bool = False) -> None:
     font_sizes = []
     ys = []
     for node in texts:
+        y = float(node.attrib["y"])
         size = float(node.attrib.get("font-size", "0").replace("px", ""))
         minimum = 24 if y >= 180 else 18
         require(size >= minimum, f"{path}: terminal text is too small ({size:g}px; needs at least {minimum}px here)")

@@ -42,7 +42,7 @@ class TerminalSnapshotTests(unittest.TestCase):
         texts = [node for node in root.iter() if node.tag.endswith("text")]
         body = [node for node in texts if float(node.attrib.get("y", "0")) >= 180]
         self.assertGreaterEqual(len(body), 10)
-        self.assertIn("Stochastic Market Maker", "".join(node.itertext()) if texts else "")
+        self.assertIn("Stochastic Market Maker", "".join("".join(node.itertext()) for node in texts))
         for node in texts:
             y = float(node.attrib["y"])
             size = float(node.attrib.get("font-size", "0").replace("px", ""))
