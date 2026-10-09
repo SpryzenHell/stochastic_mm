@@ -56,7 +56,7 @@ jobs:
         run: python scripts/validate_artifacts.py
 
       - name: End-to-end run and generated figures
-        run: python scripts/run_research.py --runs 25 --output results/ci --skip-build --build-dir build
+        run: python scripts/run_research.py --runs 100 --output results/ci --skip-build --build-dir build
 
       - name: Paired sensitivity sweep (500 paths)
         run: >-
