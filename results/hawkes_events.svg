@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="430" viewBox="0 0 960 430">
+<rect width="960" height="430" fill="white"/>
+<text x="60" y="40" font-family="Arial" font-size="28" font-weight="600">Hawkes order-flow path</text>
+<text x="60" y="66" font-family="Arial" font-size="15" fill="#555">Exact C++ path, seed 1000; first 20 seconds, 500 ms bins</text>
+<text x="22" y="150" font-family="Arial" font-size="12" fill="#555">sell</text>
+<text x="22" y="315" font-family="Arial" font-size="12" fill="#555">buy</text>
+<line x1="70" y1="365" x2="920" y2="365" stroke="#bbb"/>
+<line x1="70" y1="90" x2="70" y2="365" stroke="#bbb"/>
+<g fill="#4c78a8">
+<rect x="72" y="250" width="17" height="115"/><rect x="93" y="216" width="17" height="149"/>
+<rect x="114" y="192" width="17" height="173"/><rect x="135" y="141" width="17" height="224"/>
+<rect x="156" y="183" width="17" height="182"/><rect x="177" y="198" width="17" height="167"/>
+<rect x="198" y="133" width="17" height="232"/><rect x="219" y="177" width="17" height="188"/>
+<rect x="240" y="227" width="17" height="138"/><rect x="261" y="163" width="17" height="202"/>
+<rect x="282" y="157" width="17" height="208"/><rect x="303" y="177" width="17" height="188"/>
+<rect x="324" y="214" width="17" height="151"/><rect x="345" y="170" width="17" height="195"/>
+<rect x="366" y="181" width="17" height="184"/><rect x="387" y="178" width="17" height="187"/>
+<rect x="408" y="229" width="17" height="136"/><rect x="429" y="170" width="17" height="195"/>
+<rect x="450" y="162" width="17" height="203"/><rect x="471" y="153" width="17" height="212"/>
+<rect x="492" y="212" width="17" height="153"/><rect x="513" y="208" width="17" height="157"/>
+<rect x="534" y="132" width="17" height="233"/><rect x="555" y="159" width="17" height="206"/>
+<rect x="576" y="90" width="17" height="275"/><rect x="597" y="124" width="17" height="241"/>
+<rect x="618" y="143" width="17" height="222"/><rect x="639" y="153" width="17" height="212"/>
+<rect x="660" y="104" width="17" height="261"/><rect x="681" y="199" width="17" height="166"/>
+<rect x="702" y="170" width="17" height="195"/><rect x="723" y="205" width="17" height="160"/>
+<rect x="744" y="233" width="17" height="132"/><rect x="765" y="228" width="17" height="137"/>
+<rect x="786" y="199" width="17" height="166"/><rect x="807" y="67" width="17" height="298"/>
+<rect x="828" y="184" width="17" height="181"/><rect x="849" y="156" width="17" height="209"/>
+<rect x="870" y="128" width="17" height="237"/><rect x="891" y="67" width="17" height="298"/>
+</g>
+<g fill="#9c9c9c">
+<rect x="72" y="291" width="17" height="74"/><rect x="93" y="251" width="17" height="114"/>
+<rect x="114" y="247" width="17" height="118"/><rect x="135" y="231" width="17" height="134"/>
+<rect x="156" y="222" width="17" height="143"/><rect x="177" y="204" width="17" height="161"/>
+<rect x="198" y="150" width="17" height="215"/><rect x="219" y="202" width="17" height="163"/>
+<rect x="240" y="198" width="17" height="167"/><rect x="261" y="226" width="17" height="139"/>
+<rect x="282" y="211" width="17" height="154"/><rect x="303" y="174" width="17" height="191"/>
+<rect x="324" y="167" width="17" height="198"/><rect x="345" y="205" width="17" height="160"/>
+<rect x="366" y="214" width="17" height="151"/><rect x="387" y="201" width="17" height="164"/>
+<rect x="408" y="240" width="17" height="125"/><rect x="429" y="203" width="17" height="162"/>
+<rect x="450" y="184" width="17" height="181"/><rect x="471" y="240" width="17" height="125"/>
+<rect x="492" y="245" width="17" height="120"/><rect x="513" y="236" width="17" height="129"/>
+<rect x="534" y="202" width="17" height="163"/><rect x="555" y="184" width="17" height="181"/>
+<rect x="576" y="213" width="17" height="152"/><rect x="597" y="185" width="17" height="180"/>
+<rect x="618" y="181" width="17" height="184"/><rect x="639" y="243" width="17" height="122"/>
+<rect x="660" y="229" width="17" height="136"/><rect x="681" y="217" width="17" height="148"/>
+<rect x="702" y="243" width="17" height="122"/><rect x="723" y="253" width="17" height="112"/>
+<rect x="744" y="206" width="17" height="159"/><rect x="765" y="214" width="17" height="151"/>
+<rect x="786" y="225" width="17" height="140"/><rect x="807" y="214" width="17" height="151"/>
+<rect x="828" y="217" width="17" height="148"/><rect x="849" y="206" width="17" height="159"/>
+<rect x="870" y="195" width="17" height="170"/><rect x="891" y="178" width="17" height="187"/>
+</g>
+<text x="70" y="388" font-family="Arial" font-size="12">0s</text><text x="275" y="388" font-family="Arial" font-size="12">5s</text><text x="488" y="388" font-family="Arial" font-size="12">10s</text><text x="700" y="388" font-family="Arial" font-size="12">15s</text><text x="905" y="388" font-family="Arial" font-size="12">20s</text>
+<rect x="740" y="28" width="12" height="12" fill="#4c78a8"/><text x="758" y="39" font-family="Arial" font-size="13">sell market orders</text>
+<rect x="852" y="28" width="12" height="12" fill="#9c9c9c"/><text x="870" y="39" font-family="Arial" font-size="13">buy market orders</text>
+</svg>

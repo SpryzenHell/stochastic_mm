@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1160" viewBox="0 0 1440 1160">
+<rect width="1440" height="1160" fill="#f4f2ec"/>
+<path d="M0 0 H1440 V12 H0 Z" fill="#286e61"/>
+<text x="52" y="58" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="700" fill="#1d2b29">Automated validation run</text>
+<text x="52" y="94" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#53635e">Completed CI checks for the reproducible research path</text>
+<rect x="48" y="122" width="1344" height="76" rx="14" fill="#203f3a"/>
+<text x="76" y="169" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#ffffff">Both build paths and all experiment checks passed</text>
+<rect x="1144" y="141" width="208" height="38" rx="19" fill="#b9ead1"/>
+<text x="1248" y="166" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="19" font-weight="700" fill="#174b3b">CI SUCCESS</text>
+<rect x="48" y="230" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="48" y="230" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="87" cy="272" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M78 272 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="120" y="279" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">C++ build with Eigen</text>
+<rect x="583" y="256" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="624" y="276" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="76" y="317" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">CMake Release build, C++20 compiler</text>
+<text x="76" y="346" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Eigen-backed Hawkes spectral-radius path</text>
+<rect x="728" y="230" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="728" y="230" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="767" cy="272" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M758 272 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="800" y="279" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">C++ build without Eigen</text>
+<rect x="1263" y="256" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="1304" y="276" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="756" y="317" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Fallback spectral-radius calculation</text>
+<text x="756" y="346" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Native CPU flags disabled for portability</text>
+<rect x="48" y="440" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="48" y="440" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="87" cy="482" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M78 482 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="120" y="489" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">C++ regression checks</text>
+<rect x="583" y="466" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="624" y="486" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="76" y="527" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Grid size, finite values, quote bounds,</text>
+<text x="76" y="556" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">inventory edges, Hawkes stability, fixed seeds</text>
+<rect x="728" y="440" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="728" y="440" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="767" cy="482" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M758 482 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="800" y="489" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">Python analysis tests</text>
+<rect x="1263" y="466" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="1304" y="486" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="756" y="527" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Input parsing and confidence-interval checks</text>
+<text x="756" y="556" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Syntax checks for scripts and dashboard</text>
+<rect x="48" y="650" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="48" y="650" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="87" cy="692" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M78 692 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="120" y="699" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">End-to-end research run</text>
+<rect x="583" y="676" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="624" y="696" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="76" y="737" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">100 deterministic Monte Carlo paths</text>
+<text x="76" y="766" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">JSON, CSV, PNG and SVG report outputs</text>
+<rect x="728" y="650" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="728" y="650" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="767" cy="692" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M758 692 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="800" y="699" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">Paired sensitivity sweep</text>
+<rect x="1263" y="676" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="1304" y="696" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="756" y="737" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">20 parameter settings × 25 paths each</text>
+<text x="756" y="766" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">500 path evaluations using shared seed lists</text>
+<rect x="48" y="860" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="48" y="860" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="87" cy="902" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M78 902 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="120" y="909" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">Monte Carlo convergence</text>
+<rect x="583" y="886" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="624" y="906" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="76" y="947" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Nested seed sizes: 25, 50, 100, 200</text>
+<text x="76" y="976" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">375 evaluations; sample prefixes overlap</text>
+<rect x="728" y="860" width="648" height="176" rx="14" fill="#ffffff" stroke="#d7ddd5" stroke-width="1.5"/>
+<rect x="728" y="860" width="8" height="176" rx="4" fill="#4e9d7a"/>
+<circle cx="767" cy="902" r="17" fill="#d8f2e4" stroke="#4e9d7a" stroke-width="1.5"/>
+<path d="M758 902 l6 6 l12 -14" fill="none" stroke="#267653" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="800" y="909" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="700" fill="#24342e">Output integrity checks</text>
+<rect x="1263" y="886" width="82" height="29" rx="14" fill="#e3f4ea"/>
+<text x="1304" y="906" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#267653">PASS</text>
+<text x="756" y="947" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">Finite metrics and consistent CSV/JSON</text>
+<text x="756" y="976" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#4c5d56">SVG text bounds and PNG file headers</text>
+<path d="M48 1080 H1392" stroke="#c9d1ca" stroke-width="1.5"/>
+<text x="50" y="1112" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#53635e">Static summary of completed automated checks; not a live terminal screenshot.</text>
+<text x="50" y="1140" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#53635e">CI also saves the run, sensitivity-sweep and convergence outputs as downloadable artifacts.</text>
+</svg>

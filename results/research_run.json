@@ -1,0 +1,55 @@
+{
+  "runs": 100,
+  "seed_start": 1000,
+  "hjb": {
+    "gamma": 0.05,
+    "sigma": 0.2,
+    "arrival_A": 80,
+    "arrival_k": 40,
+    "liquidation_cost": 0.005,
+    "min_delta": 0.0005,
+    "max_delta": 0.5,
+    "horizon": 60,
+    "dt": 0.005,
+    "q_max": 25,
+    "time_steps": 12001
+  },
+  "hjb_fdm_solve_ms": 14.415143,
+  "hawkes": {
+    "mu_sell": 70,
+    "mu_buy": 50,
+    "alpha_ss": 5.2,
+    "alpha_sb": 0.3,
+    "alpha_bs": 0.3,
+    "alpha_bb": 5.2,
+    "beta": 8,
+    "horizon": 60,
+    "branching_ratio": 0.6875,
+    "stationary_sell_intensity": 217.8064516,
+    "stationary_buy_intensity": 166.1935484,
+    "next_sell_direction_auc": 0.5563327755,
+    "prediction_samples": 2298582
+  },
+  "quote_engine": {
+    "median_ns": 13.1164,
+    "p99_ns": 16.9876
+  },
+  "strategies": {
+    "hjb_qvi": {
+      "mean_pnl": -32.87257668,
+      "std_pnl": 23.66525108,
+      "mean_rms_inventory": 5.212889697,
+      "mean_abs_inventory": 4.265494525,
+      "mean_adverse_selection_bps": 1.370165721,
+      "p95_abs_inventory": 14
+    },
+    "fixed_spread": {
+      "mean_pnl": -549.1274,
+      "std_pnl": 105.2080873,
+      "mean_rms_inventory": 20.44107835,
+      "mean_abs_inventory": 19.40992887,
+      "mean_adverse_selection_bps": 1.649023877,
+      "p95_abs_inventory": 25
+    }
+  }
+}

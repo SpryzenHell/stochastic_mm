@@ -1,258 +1,723 @@
 # Stochastic Market Maker
 
-## Overview
+**Author:** Pirate-Emperor
 
-The **Stochastic Market Maker** utilizes Modern C++ to implement the market making strategy described in the Avellaneda-Stoikov model: *"High-frequency trading in a limit order book"* (Marco Avellaneda & Sasha Stoikov, 2006).
+This repository contains a C++/Python implementation of a stochastic market-making experiment built around three pieces:
 
-It acts as a practical sandbox for market microstructure research. Explore how clustered order flow emerges from Hawkes processes, prototype execution logic on a deterministic C++ limit order book, and surface results through notebooks, scripts, and a guided Streamlit front end.
+1. inventory control with a reduced-state HJB-QVI,
+2. clustered buy/sell order flow from a bivariate exponential Hawkes process, and
+3. a precomputed C++ finite-difference policy with a small quote-generation path.
 
-## Features
+The default experiment is synthetic and does not require market-data files, API keys, exchange credentials, or external services.
 
-We construct a market making engine which:
+## Contents
 
-- **Simulates a Stream of market ticks** (market prices), either from:
-  - A synthetic stochastic model by generating a Brownian Motion
-  - A CSV to "Replay" a real trading day
-  - Designed to be extendable with other sources of data
+- [What is implemented](#what-is-implemented)
+- [Requirements](#requirements)
+- [Run it from a clean clone](#run-it-from-a-clean-clone)
+- [Run the research experiment](#run-the-research-experiment)
+- [Run a parameter sweep](#run-a-parameter-sweep)
+- [Open the local dashboard](#open-the-local-dashboard)
+- [Outputs](#outputs)
+- [Canonical experiment](#canonical-experiment)
+- [Figures](#figures)
+- [Model](#model)
+- [Project structure](#project-structure)
+- [Tests and CI](#tests-and-ci)
+- [Troubleshooting](#troubleshooting)
+- [Scope and limitations](#scope-and-limitations)
 
-- **Computes mid/bid/ask prices and spread** of a market-making strategy such as:
-  - The Avellaneda-Stoikov model, based on an indifference price of the market-maker
-  - The benchmark strategy, which considers the market price as the mid price
+## What is implemented
 
-- **Models market order arrivals** via the **inventory evolution of the market maker** as a Poisson process. The Poisson distribution intensities increase as quotes move closer to the mid price.
+### Inventory control
 
-- **Simulates a Full market-making session** (e.g. one trading day at high frequency), tracks inventory and P&L.
+The research path solves a finite-horizon inventory-control problem on an integer inventory grid.
 
-- **Simulates Monte Carlo simulations** of market-making sessions with different sets of market-maker parameters (e.g. risk aversion), and computes Mean P&L and Standard deviation.
+The state is
 
-## Architecture
+`(t, q)`
+
+where `q` is inventory. The controller chooses the bid and ask quote distances.
+
+The synthetic fill model is
+
+`lambda(delta) = A * exp(-k * delta)`.
+
+The continuation operator includes inventory risk
+
+`-0.5 * gamma * sigma^2 * q^2`.
+
+The QVI compares continuation with an intervention value that liquidates inventory at a configurable cost. At the inventory boundary, intervention is also enabled.
+
+The numerical solution is stored as a time-by-inventory table. The online quote path only performs indexing, clamping and arithmetic.
+
+### Hawkes order flow
+
+The simulator uses two event types:
+
+- `0` = sell market order / bid hit
+- `1` = buy market order / ask lift
+
+The intensity of each side is
+
+`lambda_i(t) = mu_i + sum_j alpha_ij * sum_k exp(-beta * (t - tau_k))`.
+
+Same-side and cross-side excitation are kept separate. This allows the simulator to produce bursts of activity rather than independent Poisson arrivals.
+
+The integrated kernel matrix is `K = alpha / beta`. Its spectral radius is used as the branching ratio. With Eigen3 installed, the 2 x 2 spectral radius is evaluated with Eigen; the project also contains a closed-form fallback, so Eigen is not required for the basic build.
+
+### Finite-difference and quote path
+
+The HJB solution is computed by backward time stepping over the inventory grid.
+
+The hot inventory loop is annotated with:
+
+```cpp
+#pragma omp simd
+```
+
+GCC and Clang builds use optimization flags suitable for the benchmark path. `-march=native` can be disabled with:
 
 ```text
-Market Making Engine
-│
-├── Core Data Structures
-│   ├── Tick
-│   ├── Quote
-│   ├── BookState
-│   ├── BookSnapshot
-│   └── TradingHistory
-│
-├── Strategy (IStrategy)
-│   ├── AsStrategy (Avellaneda-Stoikov)
-│   └── Benchmark
-│
-├── Market Data (IMarketDataStream)
-│   ├── BrownianStream
-│   └── CSVStream
-│
-├── Inventory (IInventoryModel)
-│   └── PoissonInventory
-│
-├── Simulation
-│   ├── MarketSimulator
-│   ├── MCEngine (Monte Carlo)
-│   ├── SimulationResult
-│   ├── MCStats
-│   └── Visualizer
-│
-└── Output
-    ├── CSV export
-    └── Terminal display
-
+-DSMM_NATIVE_OPT=OFF
 ```
 
-## Results
+The FDM solve and the online quote lookup are benchmarked separately. The latter is not a claim about exchange connectivity or end-to-end trading latency.
 
-Figure 1 show results of a simulation using the following parameters:
+## Requirements
 
-* gamma: 0.1
-* sigma: 2
-* T: 1
-* k: 1.5
-* M: 0.5
+The supported research path uses:
 
-The first chart shows price, indifference price and bid, ask quotes evolution. The second chart shows the profit and loss evolution. The last chart shows the inventory evolution.
+- CMake 3.18 or newer
+- a C++20 compiler
+- Python 3.10 or newer for the Python runner and dashboard
+- Eigen3 is recommended, but the C++ research binary has a fallback and can build without it
+- matplotlib and NumPy for the report generation
+- Streamlit only if the local dashboard is required
 
-Figure 2 shows the distribution of PnL over 1000 simulations.
+No data download is required for the default experiment.
 
----
+### Ubuntu / Debian
 
-# Part II: Hawkes Processes & Microstructure Simulation
-
-## At a Glance
-
-* **Deterministic order book core** – Modern C++20 engine with price-Time priority kept Intentionally readable for experimentation.
-* **Shared Hawkes kernels** – Exponential and power-law intensity implementations exposed to both C++ and Python.
-* **Analytics & visualization** – Python package with thinning simulators, diagnostics, plots, and export utilities.
-* **Deterministic backtester** – C++ order book bridged into Python for reproducible order/fill replays and structured metrics.
-* **Interactive Streamlit app** – Visualise timelines, compare kernels, and download simulated order flow.
-
-## Architecture & Data Flow
-
-The simulator stitches together four stages, mirroring the reference architecture described by Cartea et al. (2015) and Gatheral & Schied (2013):
-
-1. **Hawkes-driven order flow** – exponential/power-law kernels Generate clustered market/limit-order timing scenarios. Timeline plots (above) illustrate self-excitation during liquidity shocks.
-2. **Deterministic matching engine** – the C++20 order book enforces price-Time priority and stores resting orders in intrusive FIFO lists at each price level.
-3. **Risk, PnL, and backtesting services** – Python orchestrators Replay fills, compute realised/unrealised PnL, and Stream metrics to dashboards.
-4. **Visualization & research surfaces** – notebooks and Streamlit panels expose the same artefacts for exploratory analysis or reporting.
-
-### How data moves through the stack
-
-| Stage | Input | Output | Notes |
-| --- | --- | --- | --- |
-| Feed ingestion | Hawkes samples / recorded CSV | Normalised event arrays | Supports Binance, LOBSTER, and synthetic datasets. |
-| Matching | Feed events, strategy orders | Executions, book snapshots | Deterministic, regression-tested (`tests/order_tests.cpp`). |
-| Risk engine | Executions, snapshots | Inventory, PnL, alerts | Snapshots logged under `logs/` for dashboards. |
-| Analytics | Risk snapshots, raw fills | Plots, CSVs, Streamlit widgets | Artefacts saved in `results/week*/`. |
-
-## Illustrated Analytics
-
-* **Intensity tracking** – exponential kernels adapt quickly to surges, while power-law kernels retain memory. The figures above help compare how different λ choices affect self-excitation.
-* **Autocorrelation diagnostics** – arrivals ACFs quantify clustering. Values closer to zero after a few bins suggest weaker residual dependence; persistent autocorrelation suggests the need for heavier tails.
-
-* **Goodness-of-fit diagnostics** – rescaled QQ and KS plots diagnose how Close fitted or simulated arrivals are to the exponential residual benchmark.
-
-### Prerequisites
-
-* CMake >= 3.15 and a C++20-capable compiler (Clang, GCC, or MSVC).
-* Python 3.10+ with `pip` for the analytics layer and Streamlit app.
-
-### Build the C++ Simulator
+Install the build tools and Python environment:
 
 ```bash
-cmake -S . -B build/release -DCMAKE_BUILD_TYPE=Release
-cmake --build build/release --target hft_sim
-./build/release/hft_sim
-
+sudo apt update
+sudo apt install -y build-essential cmake python3 python3-venv python3-pip libeigen3-dev
 ```
 
-### Run the Hawkes Example (C++)
+### macOS
+
+Install the Apple command-line tools first if they are not already present:
 
 ```bash
-cmake --build build/release --target hawkes_example
-./build/release/hawkes_example
-
+xcode-select --install
 ```
 
-### Execute Tests
+Then install the remaining tools with Homebrew:
 
-```bash
-cmake -S . -B build/tests -DHFT_ENABLE_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
-cmake --build build/tests --target order_tests
-ctest --test-dir build/tests --output-on-failure
-
+```brew install cmake eigen python
 ```
 
-### Explore the Python Package & Demos
+### Windows
+
+Install Visual Studio 2022 with the **Desktop development with C++** workload.
+
+Also install Python 3.10+.
+
+CMake is included with current Visual Studio installations. Eigen is optional for the research executable; installing Eigen separately is useful when the Eigen-backed spectral-radius path is required.
+
+## Run it from a clean clone
+
+The following is the complete C++ path. It does not depend on the legacy code under `smmSrc/`, `includes/`, or `smmPython/`.
+
+### Linux / macOS
+
+Clone the repository and enter it:
 
 ```bash
-cd python
+git clone https://github.com/SpryzenHell/stochastic_mm.git
+cd stochastic_mm
+```
+
+Configure the Release build:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+```
+
+Build:
+
+```bash
+cmake --build build --parallel
+```
+
+Run the tests:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+Run the C++ research executable:
+
+```bash
+./build/research/smm_research 100 results/run_100
+```
+
+The first argument is the number of Monte Carlo paths. The second argument is the output directory.
+
+### Windows
+
+Clone the repository:
+
+```powershell
+git clone https://github.com/SpryzenHell/stochastic_mm.git
+cd stochastic_mm
+```
+
+Generate a Visual Studio build:
+
+```powershell
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+```
+
+Build the Release configuration:
+
+```powershell
+cmake --build build --config Release --parallel
+```
+
+Run the tests:
+
+```powershell
+ctest --test-dir build -C Release --output-on-failure
+```
+
+Run the research executable:
+
+```powershell
+build\research\Release\smm_research.exe 100 results\run_100
+```
+
+## Run the research experiment
+
+The Python script is the recommended way to reproduce the complete report because it also generates the figures.
+
+Create a virtual environment.
+
+Linux / macOS:
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
-MPLCONFIGDIR=.matplotlib python3 -m demo
-
+python -m pip install --upgrade pip
+python -m pip install -r python/requirements.txt
 ```
 
-## Interactive Streamlit App
+Windows PowerShell:
 
-Launch the pedagogy-first Streamlit interface to experiment with Hawkes processes visually:
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r python\requirements.txt
+```
+
+Run the complete experiment:
 
 ```bash
-cd python
-streamlit run streamlit_app.py
-
+python scripts/run_research.py --runs 100 --output results/run_100
 ```
 
-Inside the app you can:
+The script:
 
-* Pick preset market regimes (Calm Market, Frenzy, Flash Crash) or define your own parameters.
-* Toggle between exponential and power-law kernels and overlay comparison runs.
-* Inspect branching ratios with criticality warnings and view order-size histograms.
+1. configures the CMake project,
+2. builds the research targets,
+3. runs CTest,
+4. runs the C++ research executable,
+5. reads the generated JSON/CSV files,
+6. writes the Python summary, and
+7. creates the report figures.
 
-The app bridges directly to the native C++ kernels via `bridge_utils.Ensure_bridge_path`, so ensure build artefacts exist under `build/lib`.
-
-## Research Benchmarks
-
-### Prepare Datasets
-
-* **Binance BTCUSDT**
+The build can be reused with:
 
 ```bash
-  python scripts/pack_binance_npz.py \
-    --input-dir data/runs/events \
-    --symbol BTCUSDT \
-    --days 2025-09-21 \
-    --output data/runs/events/binance_btcusdt_2025-09-21.npz
-  
-
+python scripts/run_research.py --runs 100 --output results/run_100 --skip-build
 ```
 
-* **LOBSTER AAPL**
+A custom CMake build directory can be selected with:
 
 ```bash
-  python scripts/preprocess_lobster.py \
-    --messages data/lobster/LOBSTER_SampleFile_AAPL_2012-06-21_10/\
-      AAPL_2012-06-21_34200000_57600000_message_10.csv \
-    --symbol AAPL \
-    --date 2012-06-21 \
-    --output data/runs/events/lobster_aapl_2012-06-21_sample.npz
-  
-
+python scripts/run_research.py --runs 100 --output results/run_100 --build-dir build_release
 ```
 
-### Train GRU and Transformer Backbones
+For a first check, 10 paths are enough:
 
 ```bash
-export PYTHONPATH=.
-PYTHONPATH=. python experiments/run_matrix.py \
-  --Config experiments/configs/binance_backbones.json \
-  --results-dir experiments/results \
-  --run-dir experiments/runs
-
-PYTHONPATH=. python experiments/run_matrix.py \
-  --Config experiments/configs/lobster_backbones.json \
-  --results-dir experiments/results \
-  --run-dir experiments/runs
-
+python scripts/run_research.py --runs 10 --output results/smoke_test
 ```
 
-Each run logs deterministic seeds and checkpoints. Artefacts land in `experiments/runs/<experiment_id>/`:
+For the reference experiment, use 100 paths.
 
-* `metrics.json` summarises Train/Val/Test NLL, MAE, accuracy, KS stats, runtime, and parameter count.
-* `curves/` stores CSVs for loss and calibration bins.
-* `figs/` holds paper-ready loss/QQ/KS/calibration plots.
+## Run a parameter sweep
 
-## Theory Snapshot
+A parameter sweep checks how risk aversion and liquidation cost affect inventory risk and PnL. The default grid has 20 settings and runs 25 paths per setting (500 paths total). The same seed set is used for every setting, so each setting is tested against the same simulated event paths.
 
-* **Limit-order dynamics** — the C++ core models submissions, cancellations, and executions with price-Time priority, letting you observe queue evolution as a discrete-event system.
-* **Hawkes intensity** — arrivals follow `λ(t) = μ + \sum_i φ(t - T_i, V_i)`, capturing self-excitation where past trades raise the probability of near-future activity.
-* **Kernel choices** — the exponential kernel `φ(u,v)=α v e^{-βu}` yields Markovian state updates; the power-law alternative `φ(u,v)=α v (u+c)^{-γ}` captures longer memory.
-* **Branching ratio** — expected offspring per event, `n = E[φ]`; keeping `n < 1` gives the standard subcritical Hawkes regime with finite stationary Mean intensity.
+```bash
+python scripts/run_sensitivity.py --runs 25 --gamma-values 0.01,0.02,0.05,0.10,0.20 --liquidation-costs 0.001,0.005,0.010,0.020 --output results/sensitivity
+```
+
+The script writes a CSV table, a JSON report with confidence intervals, three heatmaps, and a PnL-versus-inventory-risk plot. The confidence intervals are estimates, not guarantees. All scenarios use synthetic order flow; timing results depend on the machine.
+
+<p align="center">
+  <img src="results/sensitivity_design.svg" alt="Twenty-setting paired parameter sweep design" width="960">
+</p>
+
+## Check Monte Carlo sample-size stability
+
+This experiment reruns the model with 25, 50, 100 and 200 paths. Larger runs reuse the same initial seeds as smaller runs, making it easier to see how PnL, inventory risk and direction AUC change as the sample grows.
+
+```bash
+python scripts/run_convergence.py --run-counts 25,50,100,200 --output results/convergence
+```
+
+The experiment performs 375 path evaluations and creates a CSV, JSON report and three plots. Because the seed prefixes overlap, these are not 375 independent paths.
+
+<p align="center">
+  <img src="results/convergence_design.svg" alt="Nested-seed sample-size experiment design" width="960">
+</p>
+
+## Data analysis figures
+
+### Parameter sweep results
+
+These charts summarize the 20-setting sweep with 25 paths per setting. The CSV table is checked in at `results/sensitivity_summary.csv`; the full sweep can be reproduced with `scripts/run_sensitivity.py`.
+
+<p align="center"><img src="results/sensitivity_inventory_heatmap.svg" alt="Mean RMS inventory heatmap" width="900"></p>
+<p align="center"><img src="results/sensitivity_pnl_heatmap.svg" alt="HJB-QVI mean PnL heatmap" width="900"></p>
+<p align="center"><img src="results/sensitivity_reduction_heatmap.svg" alt="Inventory reduction heatmap" width="900"></p>
+<p align="center"><img src="results/sensitivity_tradeoff.svg" alt="PnL and inventory-risk settings scatter plot" width="900"></p>
+
+In this tested grid, `gamma=0.20` and liquidation cost `0.001` produced the highest mean PnL and the lowest mean RMS inventory. This is a result for the synthetic setup and 25 paths per setting, not a market-wide recommendation.
+
+### Sample-size results
+
+The following figures use nested seed prefixes at 25, 50, 100 and 200 paths. The prefixes overlap, so the sum of 375 path evaluations is not 375 independent samples.
+
+<p align="center"><img src="results/pnl_convergence.svg" alt="PnL estimates with confidence intervals by sample size" width="900"></p>
+<p align="center"><img src="results/inventory_convergence.svg" alt="Inventory-risk estimates by sample size" width="900"></p>
+<p align="center"><img src="results/auc_convergence.svg" alt="Hawkes direction AUC by sample size" width="900"></p>
+
+## Open the local dashboard
+
+The repository also contains a small Streamlit dashboard for inspecting a completed run.
+
+Start it with:
+
+```bash
+streamlit run python/dashboard.py
+```
+
+The sidebar accepts the results directory. For example, after running:
+
+```bash
+python scripts/run_research.py --runs 100 --output results/run_100
+```
+
+enter:
+
+```text
+results/run_100
+```
+
+The dashboard reads only files already produced by the experiment. It does not fetch market data or call a remote service.
+
+The dashboard shows:
+
+- the inventory-control summary,
+- the HJB-QVI quote policy,
+- the HJB-QVI versus fixed-spread comparison,
+- the Hawkes event path, and
+- the raw JSON record for the selected run.
+
+## Outputs
+
+A fresh run creates files such as:
+
+```text
+results/run_100/
+├── research_run.json
+├── python_summary.json
+├── policy_t0.csv
+├── sample_hawkes_events.csv
+├── policy_skew.png
+├── inventory_comparison.png
+├── latency_benchmark.png
+├── hawkes_events.png
+└── terminal_snapshot.svg
+```
+
+### What each file contains
+
+| File | Contents |
+| --- | --- |
+| `research_run.json` | Complete numerical result of the C++ run |
+| `python_summary.json` | Small set of derived summary metrics |
+| `policy_t0.csv` | Bid/ask quote distances for every inventory value at `t = 0` |
+| `sample_hawkes_events.csv` | Exact C++ Hawkes path for seed 1000 |
+| `policy_skew.png` | HJB-QVI bid/ask distance versus inventory |
+| `inventory_comparison.png` | Mean RMS inventory comparison |
+| `latency_benchmark.png` | FDM and quote-path timing measurements |
+| `hawkes_events.png` | Hawkes event timeline |
+| `terminal_snapshot.svg` | Large-text SVG summary written from the run JSON |
+
+The checked-in files under `results/` are the reference artifacts. A new experiment should normally be written to another directory such as `results/run_100` so that the reference results are not overwritten.
+
+## Canonical experiment
+
+The reference configuration is stored in [`configs/research_default.json`](configs/research_default.json).
+
+The main parameters are:
+
+| Parameter | Value |
+| --- | ---: |
+| HJB risk aversion (`gamma`) | 0.05 |
+| Volatility (`sigma`) | 0.20 |
+| Arrival scale (`A`) | 80 |
+| Arrival decay (`k`) | 40 |
+| Liquidation cost | 0.005 |
+| Inventory range | -25 to +25 |
+| HJB horizon | 60 s |
+| HJB time step | 0.005 s |
+| HJB time steps | 12,001 |
+| Hawkes baseline: sell | 70 s⁻¹ |
+| Hawkes baseline: buy | 50 s⁻¹ |
+| Same-side excitation | 5.2 |
+| Cross-side excitation | 0.3 |
+| Hawkes decay (`beta`) | 8 |
+| Monte Carlo paths | 100 |
+
+The checked-in reference run is stored in [`results/research_run.json`](results/research_run.json).
+
+### Reference metrics
+
+| Metric | HJB-QVI | Fixed spread |
+| --- | ---: | ---: |
+| Mean RMS inventory | **5.2129** | 20.4411 |
+| Mean absolute inventory | **4.2655** | 19.4099 |
+| Mean PnL | -32.87 | -549.13 |
+| PnL standard deviation | 23.67 | 105.21 |
+| Mean adverse-selection markout | 1.370 bps | 1.649 bps |
+| p95 absolute inventory | 14 | 25 |
+
+The mean RMS inventory reduction is:
+
+`74.4980%`
+
+This is a result for the configured synthetic regime. It should not be interpreted as an improvement that will hold for live market data.
+
+### Hawkes result
+
+For the same reference run:
+
+| Metric | Value |
+| --- | ---: |
+| Branching ratio | 0.6875 |
+| Stationary sell intensity | 217.8065 s⁻¹ |
+| Stationary buy intensity | 166.1935 s⁻¹ |
+| Next-event sell-direction AUC | 0.5563 |
+| Prediction samples | 2,298,582 |
+
+The predictor uses the current Hawkes state to score the next event's direction. Event type also controls the one-tick synthetic mid-price move.
+
+### Timing result
+
+The reference run measured:
+
+| Measurement | Value |
+| --- | ---: |
+| Full HJB FDM policy solve | 14.4151 ms |
+| Quote lookup median | 13.1164 ns |
+| Quote lookup p99 | 16.9876 ns |
+
+The quote benchmark is a hot-cache in-process function benchmark. It is not an exchange round-trip or a complete order-management latency measurement.
+
+## Figures
+
+The images below are all tied to the checked-in reference data.
+
+### HJB-QVI policy
+
+The following figure is the policy visualization produced from the reference `policy_t0.csv`.
+
+<p align="center">
+  <img src="results/policy_skew.svg" alt="HJB-QVI quote distance by inventory" width="900">
+</p>
+
+The plot shows how the bid and ask distances change with inventory at `t = 0`.
+
+### Inventory comparison
+
+This figure is derived directly from the two controller values in `results/research_run.json`.
+
+<p align="center">
+  <img src="results/inventory_comparison.svg" alt="Inventory risk comparison" width="760">
+</p>
+
+### Latency measurements
+
+This figure uses the three timing values recorded in `results/research_run.json`.
+
+<p align="center">
+  <img src="results/latency_benchmark.svg" alt="Latency measurements" width="760">
+</p>
+
+### Hawkes order flow
+
+This is the seed-1000 C++ sample path. The figure shows the first 20 seconds in 500 ms bins.
+
+<p align="center">
+  <img src="results/hawkes_events.svg" alt="Hawkes order flow path" width="760">
+</p>
+
+The underlying event-level data is produced by the C++ runner as `sample_hawkes_events.csv`.
+
+### Reference run summary
+
+<p align="center">
+  <img src="results/research_summary.svg" alt="Canonical run summary" width="760">
+</p>
+
+### Console summary
+
+This is a high-contrast, readable view of recorded values. It is not a live terminal screenshot or an additional simulation.
+
+<p align="center">
+  <img src="results/terminal_snapshot.svg" alt="Large-text terminal-style reference run output" width="1000">
+</p>
+
+## Model
+
+### HJB-QVI
+
+The research implementation uses a reduced inventory-space formulation rather than a full continuous price-and-inventory PDE.
+
+For the continuation region:
+
+`V_t + H_b(V) + H_a(V) - 0.5 * gamma * sigma^2 * q^2 = 0`
+
+with
+
+`H_b(V) = max_delta lambda(delta) * (delta + V(t,q+1) - V(t,q))`
+
+and the analogous ask term using `q-1`.
+
+For the exponential intensity model, the unconstrained first-order condition gives:
+
+`delta* = 1/k - Delta V`.
+
+The numerical implementation clamps `delta*` to the configured quote-distance range.
+
+The intervention value is:
+
+`M[V](q) = V(t,0) - liquidation_cost * |q|`.
+
+At each time step the solver uses the larger of the continuation value and the intervention value.
+
+The numerical method is documented in more detail in [`docs/RESEARCH_METHOD.md`](docs/RESEARCH_METHOD.md).
+
+### Hawkes process
+
+The bivariate process maintains two event types and an exponential memory state.
+
+For a sell event:
+
+- sell intensity receives same-side excitation,
+- buy intensity receives cross-side excitation.
+
+For a buy event the roles are reversed.
+
+The exponential kernel keeps the simulation state small and allows the intensity to be updated after each event without rebuilding the entire event history.
+
+### Quote lookup
+
+Once the policy table has been computed, the quote engine receives:
+
+`mid price, inventory, time`
+
+and returns:
+
+`bid price, ask price, bid distance, ask distance, intervention flag`.
+
+The policy is precomputed. The benchmark therefore measures the online lookup path, not a complete HJB solve for every market-data message.
+
+## Project structure
+
+The supported research implementation is intentionally small:
+
+```text
+.
+├── .github/workflows/
+│   └── ci.yml
+├── configs/
+│   └── research_default.json
+├── docs/
+│   ├── EXPERIMENTS.md
+│   ├── RESEARCH_METHOD.md
+│   └── architecture.md
+├── include/smm/
+│   ├── hawkes.hpp
+│   ├── hjb_qvi.hpp
+│   └── metrics.hpp
+├── python/
+│   ├── dashboard.py
+│   └── requirements.txt
+├── research/
+│   ├── CMakeLists.txt
+│   ├── sim.cpp
+│   └── sim.hpp
+├── scripts/
+│   ├── check_vectorization.sh
+│   ├── run_research.py
+│   ├── run_sensitivity.py
+│   └── validate_artifacts.py
+├── src/
+│   ├── hawkes.cpp
+│   ├── hjb_qvi.cpp
+│   └── research_runner.cpp
+├── tests/
+│   └── unit.cpp
+└── results/
+```
+
+The repository also contains earlier merged code under:
+
+```text
+smmSrc/
+includes/
+smmPython/
+```
+
+Older experiments remain available in those folders. They are not needed for the clean research build documented above.
+
+## Tests and CI
+
+The local test command is:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+The C++ regression tests check the full HJB grid, finite value and policy values, quote bounds, inventory boundary behavior, invalid inputs, safe quote clamping, Hawkes stability, stationary intensity, fixed-seed repeatability, event timestamps and types, supercritical cases, and hand-checked ROC AUC examples including tied scores. The checks remain active in Release builds.
+
+<p align="center">
+  <img src="results/test_coverage.svg" alt="Automated test coverage overview" width="960">
+</p>
+
+GitHub Actions tests both the Eigen-enabled and no-Eigen builds, runs the C++ regression checks, checks Python syntax and analysis-tool unit tests, and validates the checked-in data and figures. It then runs the full experiment with 100 paths, a 20-setting paired sensitivity sweep using 500 path evaluations, and a nested-seed convergence study with 375 path evaluations. Generated CSV, JSON, PNG, and SVG files are checked and saved as a workflow artifact.
+
+The CI workflow is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+
+<p align="center">
+  <img src="results/validation_pipeline.svg" alt="Readable summary of the automated build, test and experiment checks" width="1000">
+</p>
+
+See the [CI workflow and run history](https://github.com/SpryzenHell/stochastic_mm/actions/workflows/ci.yml) for the latest results.
+
+## Troubleshooting
+
+### `cmake: command not found`
+
+Install CMake using the operating-system instructions above and rerun the configure command.
+
+### `c++: command not found` or no C++20 compiler
+
+Install the system C++ development tools. On Ubuntu this is provided by `build-essential`. On Windows use Visual Studio with the Desktop development with C++ workload. On macOS install the Xcode command-line tools.
+
+### Eigen is not found
+
+This does not prevent the research executable from building. The spectral-radius calculation has a closed-form 2 x 2 fallback.
+
+To use Eigen explicitly, install `libeigen3-dev` on Ubuntu/Debian or the Eigen package supplied by your macOS package manager.
+
+### The Python script cannot find the executable
+
+Delete the build directory and configure it again:
+
+```bash
+rm -rf build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+```
+
+On Windows, use:
+
+```powershell
+Remove-Item -Recurse -Force build
+cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+cmake --build build --config Release --parallel
+```
+
+Then rerun the Python command.
+
+### PowerShell does not allow virtual-environment activation
+
+Use:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
+```
+
+This changes the policy only for the current PowerShell process.
+
+### The dashboard says that `research_run.json` is missing
+
+Run the experiment first and point the dashboard to the generated directory.
+
+Example:
+
+```bash
+python scripts/run_research.py --runs 100 --output results/run_100
+streamlit run python/dashboard.py
+```
+
+Then select `results/run_100` in the dashboard sidebar.
+
+## Scope and limitations
+
+The default run is a controlled simulation environment.
+
+It is useful for checking the interaction between:
+
+- inventory risk,
+- quote placement,
+- clustered order flow,
+- adverse-selection measurements, and
+- low-level C++ numerical performance.
+
+It is not an exchange simulator and it is not a claim of profitability.
+
+In particular:
+
+- the HJB implementation is a reduced inventory-space approximation;
+- the synthetic price process moves by one tick per event;
+- fill probability is tied to quote distance through the configured exponential arrival model;
+- no exchange queue position model is used by the clean research runner;
+- no real market-data feed is required for the reference experiment;
+- latency depends on compiler, processor, operating system and system load.
+
+Any empirical extension using LOBSTER, Binance or another data source should be treated as a separate experiment with its own data-processing and validation code.
+
+## Notes on generated results
+
+The checked-in numerical results correspond to the canonical configuration and deterministic C++ seeds used by the runner.
+
+Do not edit the reference JSON or figures by hand when reporting a new experiment. Run the pipeline again and keep the generated output in a new directory.
+
+For a different machine, the risk metrics may be close but not bit-for-bit identical if the compiler, standard library or floating-point environment changes. Latency measurements should always be treated as machine-specific.
 
 ## License
 
-This project is licensed under the Pirate-Emperor License. See the [LICENSE](LICENSE) file for details.
-
-## Author
-
-**Pirate-Emperor**
-
-[![Twitter](https://skillicons.dev/icons?i=twitter)](https://twitter.com/PirateKingRahul)
-[![Discord](https://skillicons.dev/icons?i=discord)](https://discord.com/users/1200728704981143634)
-[![LinkedIn](https://skillicons.dev/icons?i=linkedin)](https://www.linkedin.com/in/piratekingrahul)
-
-[![Reddit](https://img.shields.io/badge/Reddit-FF5700?style=for-the-badge&logo=reddit&logoColor=white)](https://www.reddit.com/u/PirateKingRahul)
-[![Medium](https://img.shields.io/badge/Medium-42404E?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@piratekingrahul)
-
-- GitHub: [Pirate-Emperor](https://github.com/Pirate-Emperor)
-- Reddit: [PirateKingRahul](https://www.reddit.com/u/PirateKingRahul/)
-- Twitter: [PirateKingRahul](https://twitter.com/PirateKingRahul)
-- Discord: [PirateKingRahul](https://discord.com/users/1200728704981143634)
-- LinkedIn: [PirateKingRahul](https://www.linkedin.com/in/piratekingrahul)
-- Skype: [Join Skype](https://join.skype.com/invite/yfjOJG3wv9Ki)
-- Medium: [PirateKingRahul](https://medium.com/@piratekingrahul)
-
-Thank you for visiting this project!
-
----
+See [`LICENSE`](LICENSE).

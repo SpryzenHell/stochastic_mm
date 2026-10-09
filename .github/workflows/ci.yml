@@ -1,0 +1,91 @@
+name: research-ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Eigen and build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libeigen3-dev cmake g++
+
+      - name: Install Python dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r python/requirements.txt
+
+      - name: Configure Eigen build
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DSMM_ENABLE_EIGEN=ON
+
+      - name: Build Eigen build
+        run: cmake --build build --parallel
+
+      - name: Test Eigen build
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Configure no-Eigen fallback build
+        run: cmake -S . -B build-no-eigen -DCMAKE_BUILD_TYPE=Release -DSMM_ENABLE_EIGEN=OFF -DSMM_NATIVE_OPT=OFF
+
+      - name: Build no-Eigen fallback
+        run: cmake --build build-no-eigen --parallel
+
+      - name: Test no-Eigen fallback
+        run: ctest --test-dir build-no-eigen --output-on-failure
+
+      - name: Python syntax checks
+        run: python -m compileall -q python scripts
+
+      - name: Sensitivity tool unit tests
+        run: python tests/test_research_tools.py
+
+      - name: Validate reference data and figures
+        run: python scripts/validate_artifacts.py
+
+      - name: End-to-end run and generated figures
+        run: python scripts/run_research.py --runs 100 --output results/ci --skip-build --build-dir build
+
+      - name: Paired sensitivity sweep (500 paths)
+        run: >-
+          python scripts/run_sensitivity.py
+          --runs 25
+          --gamma-values 0.01,0.02,0.05,0.10,0.20
+          --liquidation-costs 0.001,0.005,0.010,0.020
+          --output results/sensitivity_ci
+          --skip-build
+          --build-dir build
+
+      - name: Nested-seed Monte Carlo convergence (375 path evaluations)
+        run: >-
+          python scripts/run_convergence.py
+          --run-counts 25,50,100,200
+          --output results/convergence_ci
+          --skip-build
+          --build-dir build
+
+      - name: Validate generated run, sweep and convergence outputs
+        run: python scripts/validate_artifacts.py --run-dir results/ci --sensitivity-dir results/sensitivity_ci --convergence-dir results/convergence_ci
+
+      - name: Upload run and sensitivity results
+        uses: actions/upload-artifact@v4
+        with:
+          name: stochastic-market-maker-experiments
+          path: |
+            results/ci/
+            results/sensitivity_ci/
+            results/convergence_ci/
+          if-no-files-found: error
+          retention-days: 30
