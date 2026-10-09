@@ -60,6 +60,8 @@ HjbQviSolution HjbQviSolver::solve() const {
 
     for (int q = qmin; q <= qmax; ++q) {
         out.values[out.index(steps, q)] = -config_.liquidation_cost * std::abs(static_cast<double>(q));
+        out.intervene[out.index(steps, q)] =
+            static_cast<unsigned char>(std::abs(q) >= config_.q_max);
     }
 
     std::vector<double> next(width), current(width);
