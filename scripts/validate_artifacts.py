@@ -79,6 +79,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Validate repository reference and generated experiment files.")
     parser.add_argument("--run-dir", type=pathlib.Path, help="Also validate a fresh research-run output directory.")
     parser.add_argument("--sensitivity-dir", type=pathlib.Path, help="Also validate sensitivity sweep results.")
+    parser.add_argument("--convergence-dir", type=pathlib.Path, help="Also validate sample-size convergence results.")
     args = parser.parse_args()
     root = pathlib.Path(__file__).resolve().parents[1]
     readme = (root / "README.md").read_text(encoding="utf-8")
@@ -184,13 +185,47 @@ def main() -> int:
             ET.parse(sweep_dir / f"{name}.svg")
         for child in (sweep_dir / "runs").iterdir():
             if child.is_dir():
-                read_json(child / "research_run.json")
+                record = read_json(child / "research_run.json")
+                require(abs(record["hjb"]["horizon"] - record["hawkes"]["horizon"]) < 1e-12,
+                        f"{child}: HJB/Hawkes horizons do not match")
+                with (child / "policy_t0.csv").open(newline="", encoding="utf-8") as stream:
+                    policy = list(csv.DictReader(stream))
+                for row in policy:
+                    for key in ("bid_delta", "ask_delta"):
+                        require(math.isfinite(float(row[key])), f"{child}: non-finite {key}")
+
+    if args.convergence_dir:
+        conv_dir = args.convergence_dir if args.convergence_dir.is_absolute() else root / args.convergence_dir
+        conv_report = read_json(conv_dir / "convergence_summary.json")
+        with (conv_dir / "convergence_summary.csv").open(newline="", encoding="utf-8") as stream:
+            conv_rows = list(csv.DictReader(stream))
+        counts = [int(row["runs"]) for row in conv_rows]
+        require(counts == conv_report["run_counts"], "convergence CSV counts do not match JSON")
+        require(counts == sorted(set(counts)), "convergence sizes are not strictly increasing")
+        require(conv_report["total_path_evaluations"] == sum(counts), "convergence path count is inconsistent")
+        require(conv_report.get("nested_seed_prefixes") is True, "convergence report must identify nested seed prefixes")
+        for name in ("pnl_convergence", "inventory_convergence", "auc_convergence"):
+            check_png(conv_dir / f"{name}.png")
+            ET.parse(conv_dir / f"{name}.svg")
+        for count in counts:
+            folder = conv_dir / "runs" / f"n_{count}"
+            record = read_json(folder / "research_run.json")
+            require(record["runs"] == count, f"{folder}: wrong path count")
+            require(abs(record["hjb"]["horizon"] - record["hawkes"]["horizon"]) < 1e-12,
+                    f"{folder}: horizons do not match")
+            with (folder / "policy_t0.csv").open(newline="", encoding="utf-8") as stream:
+                policy = list(csv.DictReader(stream))
+            for row in policy:
+                for key in ("bid_delta", "ask_delta"):
+                    require(math.isfinite(float(row[key])), f"{folder}: non-finite {key}")
 
     details = f"{len(images)} README image links, {len(rows)} reference policy rows, {len(licenses)} license"
     if args.run_dir:
         details += ", generated run validated"
     if args.sensitivity_dir:
         details += f", {len(sweep_rows)} sensitivity settings and {report['total_paths']} paths validated"
+    if args.convergence_dir:
+        details += f", sample sizes {counts} and {conv_report['total_path_evaluations']} nested-seed path evaluations validated"
     print(f"artifact_validation: PASS ({details})")
     return 0
 

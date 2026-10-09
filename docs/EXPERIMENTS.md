@@ -33,18 +33,28 @@ The results directory contains:
 
 The 95% intervals are approximate two-sided Student-t intervals for mean PnL. Small run counts are useful for checking the pipeline but are not enough to make strong statistical claims.
 
-## 3. Hawkes order-flow checks
+## 3. Sample-size stability
+
+Run a nested-seed sample-size comparison:
+
+```bash
+python scripts/run_convergence.py --run-counts 25,50,100,200 --output results/convergence
+```
+
+The experiment compares 25, 50, 100 and 200 path estimates, reusing each smaller seed prefix within larger runs. It writes CSV and JSON summaries, PnL confidence intervals and separate PnL, inventory-risk and direction-AUC plots. It performs 375 path evaluations; because the seed prefixes overlap, they are not independent samples.
+
+## 4. Hawkes order-flow checks
 
 The `sample_hawkes_events.csv` file stores event time and event type. Type 0 is a sell market order / bid hit. Type 1 is a buy market order / ask lift. Regression tests check fixed-seed repeatability, event ordering, valid event types, finite stationary intensity for stable settings and explicit handling of supercritical settings.
 
 The event figure is a short view of one path; the CSV is the full event record for that path.
 
-## 4. Quote timing
+## 5. Quote timing
 
 The C++ runner reports the time spent solving the finite-difference grid and a hot-cache quote lookup benchmark. Quote timing is measured inside the process. It excludes market-data delivery, network time, exchange queues and order-management work.
 
 Timing depends on the CPU, compiler, operating system and current system load. Compare timing runs on the same machine and build settings.
 
-## 5. Read results carefully
+## 6. Read results carefully
 
 The model uses synthetic event paths and does not download market data. It is not a profitability claim. The HJB implementation is a reduced inventory-space approximation, and each Hawkes event changes the synthetic mid price by one tick. A lower inventory measure should be considered alongside PnL and other metrics.

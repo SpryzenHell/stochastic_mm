@@ -69,7 +69,15 @@ jobs:
           --build-dir build
 
       - name: Validate generated run and sweep outputs
-        run: python scripts/validate_artifacts.py --run-dir results/ci --sensitivity-dir results/sensitivity_ci
+        run: python scripts/validate_artifacts.py --run-dir results/ci --sensitivity-dir results/sensitivity_ci --convergence-dir results/convergence_ci
+
+      - name: Nested-seed Monte Carlo convergence (375 path evaluations)
+        run: >-
+          python scripts/run_convergence.py
+          --run-counts 25,50,100,200
+          --output results/convergence_ci
+          --skip-build
+          --build-dir build
 
       - name: Upload run and sensitivity results
         uses: actions/upload-artifact@v4
@@ -78,5 +86,6 @@ jobs:
           path: |
             results/ci/
             results/sensitivity_ci/
+            results/convergence_ci/
           if-no-files-found: error
           retention-days: 30

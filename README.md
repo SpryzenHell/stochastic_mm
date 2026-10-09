@@ -273,6 +273,20 @@ The script writes a CSV table, a JSON report with confidence intervals, three he
   <img src="results/sensitivity_design.svg" alt="Twenty-setting paired parameter sweep design" width="960">
 </p>
 
+## Check Monte Carlo sample-size stability
+
+This experiment reruns the model with 25, 50, 100 and 200 paths. Larger runs reuse the same initial seeds as smaller runs, making it easier to see how PnL, inventory risk and direction AUC change as the sample grows.
+
+```bash
+python scripts/run_convergence.py --run-counts 25,50,100,200 --output results/convergence
+```
+
+The experiment performs 375 path evaluations and creates a CSV, JSON report and three plots. Because the seed prefixes overlap, these are not 375 independent paths.
+
+<p align="center">
+  <img src="results/convergence_design.svg" alt="Nested-seed sample-size experiment design" width="960">
+</p>
+
 ## Open the local dashboard
 
 The repository also contains a small Streamlit dashboard for inspecting a completed run.
@@ -353,8 +367,8 @@ The main parameters are:
 | Liquidation cost | 0.005 |
 | Inventory range | -25 to +25 |
 | HJB horizon | 60 s |
-| HJB time step | 0.02 s |
-| HJB time steps | 3,001 |
+| HJB time step | 0.005 s |
+| HJB time steps | 12,001 |
 | Hawkes baseline: sell | 70 s⁻¹ |
 | Hawkes baseline: buy | 50 s⁻¹ |
 | Same-side excitation | 5.2 |

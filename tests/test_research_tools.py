@@ -12,6 +12,12 @@ assert SPEC is not None and SPEC.loader is not None
 sensitivity = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(sensitivity)
 
+CONV_PATH = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "run_convergence.py"
+CONV_SPEC = importlib.util.spec_from_file_location("run_convergence", CONV_PATH)
+assert CONV_SPEC is not None and CONV_SPEC.loader is not None
+convergence = importlib.util.module_from_spec(CONV_SPEC)
+CONV_SPEC.loader.exec_module(convergence)
+
 
 class SensitivityToolsTests(unittest.TestCase):
     def test_parse_positive_grid(self):
@@ -65,6 +71,26 @@ class SensitivityToolsTests(unittest.TestCase):
             {"qvi_mean_pnl": 1.0, "qvi_mean_rms_inventory": 2.0},
         ]
         self.assertEqual(len(sensitivity.pareto_rows(rows)), 2)
+
+    def test_convergence_counts_are_accepted(self):
+        self.assertEqual(convergence.parse_counts("25,50,100,200"), [25, 50, 100, 200])
+
+    def test_convergence_counts_reject_unsorted_values(self):
+        with self.assertRaises(Exception):
+            convergence.parse_counts("50,25,100")
+
+    def test_convergence_counts_reject_duplicates(self):
+        with self.assertRaises(Exception):
+            convergence.parse_counts("25,25,50")
+
+    def test_convergence_counts_reject_too_small(self):
+        with self.assertRaises(Exception):
+            convergence.parse_counts("1,25")
+
+    def test_convergence_interval_shrinks_with_more_samples(self):
+        small = convergence.ci95(1.0, 2.0, 25)
+        large = convergence.ci95(1.0, 2.0, 100)
+        self.assertGreater(small[1]-small[0], large[1]-large[0])
 
 
 if __name__ == "__main__":
