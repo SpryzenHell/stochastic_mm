@@ -68,9 +68,6 @@ jobs:
           --skip-build
           --build-dir build
 
-      - name: Validate generated run and sweep outputs
-        run: python scripts/validate_artifacts.py --run-dir results/ci --sensitivity-dir results/sensitivity_ci --convergence-dir results/convergence_ci
-
       - name: Nested-seed Monte Carlo convergence (375 path evaluations)
         run: >-
           python scripts/run_convergence.py
@@ -78,6 +75,9 @@ jobs:
           --output results/convergence_ci
           --skip-build
           --build-dir build
+
+      - name: Validate generated run, sweep and convergence outputs
+        run: python scripts/validate_artifacts.py --run-dir results/ci --sensitivity-dir results/sensitivity_ci --convergence-dir results/convergence_ci
 
       - name: Upload run and sensitivity results
         uses: actions/upload-artifact@v4
