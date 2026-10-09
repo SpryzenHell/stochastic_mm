@@ -154,7 +154,8 @@ def main() -> int:
                  "hawkes_events.svg", "research_summary.svg", "terminal_snapshot.svg",
                  "sensitivity_inventory_heatmap.svg", "sensitivity_pnl_heatmap.svg",
                  "sensitivity_reduction_heatmap.svg", "sensitivity_tradeoff.svg",
-                 "pnl_convergence.svg", "inventory_convergence.svg", "auc_convergence.svg"):
+                 "pnl_convergence.svg", "inventory_convergence.svg", "auc_convergence.svg",
+                 "validation_pipeline.svg"):
         validate_svg(root / "results" / name, terminal=(name == "terminal_snapshot.svg"))
 
     if args.run_dir:
