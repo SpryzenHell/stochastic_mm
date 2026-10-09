@@ -127,6 +127,18 @@ def main() -> int:
 
     with (root / "results/policy_t0.csv").open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
+    with (root / "results/sensitivity_summary.csv").open(newline="", encoding="utf-8") as handle:
+        sensitivity_rows = list(csv.DictReader(handle))
+    require(len(sensitivity_rows) == 20, "reference sensitivity table must have 20 settings")
+    sensitivity_pairs = {(float(row["gamma"]), float(row["liquidation_cost"])) for row in sensitivity_rows}
+    require(len(sensitivity_pairs) == 20, "reference sensitivity table has duplicate settings")
+    require(all(int(row["runs"]) == 25 for row in sensitivity_rows),
+            "reference sensitivity table must use 25 paths per setting")
+    with (root / "results/convergence_summary.csv").open(newline="", encoding="utf-8") as handle:
+        convergence_rows = list(csv.DictReader(handle))
+    convergence_counts = [int(row["runs"]) for row in convergence_rows]
+    require(convergence_counts == [25, 50, 100, 200], "reference convergence sizes are inconsistent")
+    require(sum(convergence_counts) == 375, "reference convergence path count is inconsistent")
     require(len(rows) == 2 * reference["hjb"]["q_max"] + 1, "policy CSV row count does not match q_max")
     inventories = [int(row["inventory"]) for row in rows]
     require(inventories == list(range(-reference["hjb"]["q_max"], reference["hjb"]["q_max"] + 1)),
@@ -137,7 +149,10 @@ def main() -> int:
             require(math.isfinite(value) and value >= 0.0, f"invalid {key} in policy CSV")
 
     for name in ("policy_skew.svg", "inventory_comparison.svg", "latency_benchmark.svg",
-                 "hawkes_events.svg", "research_summary.svg", "terminal_snapshot.svg"):
+                 "hawkes_events.svg", "research_summary.svg", "terminal_snapshot.svg",
+                 "sensitivity_inventory_heatmap.svg", "sensitivity_pnl_heatmap.svg",
+                 "sensitivity_reduction_heatmap.svg", "sensitivity_tradeoff.svg",
+                 "pnl_convergence.svg", "inventory_convergence.svg", "auc_convergence.svg"):
         validate_svg(root / "results" / name, terminal=(name == "terminal_snapshot.svg"))
 
     if args.run_dir:

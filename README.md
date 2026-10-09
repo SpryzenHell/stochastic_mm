@@ -287,6 +287,27 @@ The experiment performs 375 path evaluations and creates a CSV, JSON report and 
   <img src="results/convergence_design.svg" alt="Nested-seed sample-size experiment design" width="960">
 </p>
 
+## Data analysis figures
+
+### Parameter sweep results
+
+These charts summarize the 20-setting sweep with 25 paths per setting. The CSV table is checked in at `results/sensitivity_summary.csv`; the full sweep can be reproduced with `scripts/run_sensitivity.py`.
+
+<p align="center"><img src="results/sensitivity_inventory_heatmap.svg" alt="Mean RMS inventory heatmap" width="900"></p>
+<p align="center"><img src="results/sensitivity_pnl_heatmap.svg" alt="HJB-QVI mean PnL heatmap" width="900"></p>
+<p align="center"><img src="results/sensitivity_reduction_heatmap.svg" alt="Inventory reduction heatmap" width="900"></p>
+<p align="center"><img src="results/sensitivity_tradeoff.svg" alt="PnL and inventory-risk settings scatter plot" width="900"></p>
+
+In this tested grid, `gamma=0.20` and liquidation cost `0.001` produced the highest mean PnL and the lowest mean RMS inventory. This is a result for the synthetic setup and 25 paths per setting, not a market-wide recommendation.
+
+### Sample-size results
+
+The following figures use nested seed prefixes at 25, 50, 100 and 200 paths. The prefixes overlap, so the sum of 375 path evaluations is not 375 independent samples.
+
+<p align="center"><img src="results/pnl_convergence.svg" alt="PnL estimates with confidence intervals by sample size" width="900"></p>
+<p align="center"><img src="results/inventory_convergence.svg" alt="Inventory-risk estimates by sample size" width="900"></p>
+<p align="center"><img src="results/auc_convergence.svg" alt="Hawkes direction AUC by sample size" width="900"></p>
+
 ## Open the local dashboard
 
 The repository also contains a small Streamlit dashboard for inspecting a completed run.
