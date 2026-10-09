@@ -147,6 +147,14 @@ def main() -> int:
             fresh_policy = list(csv.DictReader(handle))
         require(len(fresh_policy) == 2 * run_record["hjb"]["q_max"] + 1,
                 "generated policy CSV has the wrong number of rows")
+        fresh_inventory = [int(row["inventory"]) for row in fresh_policy]
+        require(fresh_inventory == list(range(-run_record["hjb"]["q_max"], run_record["hjb"]["q_max"] + 1)),
+                "generated policy inventory grid must be contiguous and ordered")
+        for row in fresh_policy:
+            for key in ("bid_delta", "ask_delta"):
+                value = float(row[key])
+                require(math.isfinite(value) and value >= 0.0,
+                        f"invalid generated {key} in policy CSV")
         with (run_dir / "sample_hawkes_events.csv").open(newline="", encoding="utf-8") as handle:
             events = list(csv.DictReader(handle))
         last_time = -math.inf

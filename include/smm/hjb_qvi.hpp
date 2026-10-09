@@ -13,7 +13,7 @@ struct HjbQviConfig {
     double min_delta = 0.0005;            // admissible quote distance
     double max_delta = 0.50;              // numerical cap
     double horizon = 60.0;               // seconds
-    double dt = 0.02;                    // FDM time step
+    double dt = 0.005;                   // stable explicit FDM time step
     int q_max = 25;                       // inventory grid [-q_max, q_max]
     int quote_stride = 1;                // retain every FDM policy row
 };

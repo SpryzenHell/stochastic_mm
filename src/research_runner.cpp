@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
     HjbQviConfig hc;
     hc.gamma = 0.05;
-    hc.dt = 0.02;
+    hc.dt = 0.005;
     hc.liquidation_cost = 0.005;
     hc.horizon = hh.horizon;
     if (argc > 3) hc.gamma = std::stod(argv[3]);

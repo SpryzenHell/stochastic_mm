@@ -31,11 +31,23 @@ void test_default_horizons_align() {
     const smm::research::BivariateHawkesConfig hawkes;
     check(std::abs(hjb.horizon - hawkes.horizon) < 1e-12,
           "default HJB and Hawkes horizons match");
-    check(std::abs(hjb.dt - 0.02) < 1e-12,
-          "default HJB time step matches the research configuration");
+    check(std::abs(hjb.dt - 0.005) < 1e-12,
+          "default HJB time step matches the stable research configuration");
     check(std::abs(hjb.gamma - 0.05) < 1e-12 &&
           std::abs(hjb.liquidation_cost - 0.005) < 1e-12,
           "default HJB parameters match the research configuration");
+    const auto stable = smm::research::HjbQviSolver(hjb).solve();
+    check(stable.time_steps == 12001, "default 60-second HJB grid size");
+    check(stable.values.size() == stable.time_steps * stable.width(), "default HJB grid storage size");
+    for (std::size_t i = 0; i < stable.values.size(); ++i) {
+        check(std::isfinite(stable.values[i]), "default long-horizon value is finite");
+        check(std::isfinite(stable.bid_delta[i]) && std::isfinite(stable.ask_delta[i]),
+              "default long-horizon quote policy is finite");
+        check(stable.bid_delta[i] >= hjb.min_delta && stable.bid_delta[i] <= hjb.max_delta,
+              "default long-horizon bid is bounded");
+        check(stable.ask_delta[i] >= hjb.min_delta && stable.ask_delta[i] <= hjb.max_delta,
+              "default long-horizon ask is bounded");
+    }
 }
 
 void test_hjb_grid_and_quotes() {
