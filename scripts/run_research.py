@@ -117,7 +117,14 @@ def make_terminal_snapshot(out: pathlib.Path, data: dict) -> None:
     qvi = data["strategies"]["hjb_qvi"]
     base = data["strategies"]["fixed_spread"]
     reduction = 100.0 * (base["mean_rms_inventory"] - qvi["mean_rms_inventory"]) / base["mean_rms_inventory"]
-    out_label = str(out)
+    try:
+        out_label = out.resolve().relative_to(pathlib.Path.cwd().resolve()).as_posix()
+    except ValueError:
+        out_label = out.name
+    if len(out_label) > 28:
+        out_label = "…/" + pathlib.Path(out_label).name
+    if len(out_label) > 28:
+        out_label = out_label[-28:]
     lines = [
         ("$ python scripts/run_research.py --runs " + str(data["runs"]) + " --output " + out_label, "#c5d9ff"),
         (f"[PASS] {data['runs']} Monte Carlo paths completed", "#8fe3b0"),
