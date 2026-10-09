@@ -42,7 +42,9 @@ At the hard inventory boundary `|q|=Q`, intervention is also enabled so the cont
 
 ## 4. Time discretization
 
-The solver uses backward explicit stepping with
+The solver uses backward explicit stepping with a 0.005-second default time step. The smaller step is necessary for stable updates when fill intensity is high. The allowed state-grid size is checked before allocation.
+
+The time increment is computed as
 
 `Δt = horizon / ceil(horizon / dt)`.
 

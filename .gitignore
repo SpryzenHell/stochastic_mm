@@ -37,6 +37,8 @@
 /results/sensitivity_ci/
 /results/run_*/
 /results/sensitivity/
+/results/convergence/
+/results/convergence_ci/
 
 # Editors and operating systems
 .vscode/

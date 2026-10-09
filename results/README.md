@@ -6,4 +6,6 @@ The SVG figures in this folder are readable vector images based on the reference
 
 Use `scripts/run_sensitivity.py` to create a CSV table, a full JSON report, three heatmaps and a PnL/risk trade-off plot. The default sweep checks 20 settings across 500 simulated paths.
 
+Use `scripts/run_convergence.py` to compare 25, 50, 100 and 200 path estimates with nested seed prefixes. It writes CSV/JSON summaries and PnL, inventory-risk and AUC plots.
+
 All default results are synthetic. Quote timing varies by machine, and the metrics should not be treated as live-market performance.
