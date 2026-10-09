@@ -53,9 +53,10 @@ def validate_svg(path: pathlib.Path, terminal: bool = False) -> None:
     ys = []
     for node in texts:
         size = float(node.attrib.get("font-size", "0").replace("px", ""))
-        require(size >= 16, f"{path}: terminal text is too small ({size:g}px)")
+        minimum = 24 if y >= 180 else 18
+        require(size >= minimum, f"{path}: terminal text is too small ({size:g}px; needs at least {minimum}px here)")
         font_sizes.append(size)
-        ys.append(float(node.attrib["y"]))
+        ys.append(y)
     ordered = sorted(set(ys))
     for a, b in zip(ordered, ordered[1:]):
         require(b - a >= 1.05 * max(font_sizes), f"{path}: text baselines may overlap")

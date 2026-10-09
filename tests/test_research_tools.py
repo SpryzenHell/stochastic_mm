@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import pathlib
+import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 
 MODULE_PATH = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "run_sensitivity.py"
 SPEC = importlib.util.spec_from_file_location("run_sensitivity", MODULE_PATH)
@@ -17,6 +20,36 @@ CONV_SPEC = importlib.util.spec_from_file_location("run_convergence", CONV_PATH)
 assert CONV_SPEC is not None and CONV_SPEC.loader is not None
 convergence = importlib.util.module_from_spec(CONV_SPEC)
 CONV_SPEC.loader.exec_module(convergence)
+
+RUN_PATH = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "run_research.py"
+RUN_SPEC = importlib.util.spec_from_file_location("run_research", RUN_PATH)
+assert RUN_SPEC is not None and RUN_SPEC.loader is not None
+run_research = importlib.util.module_from_spec(RUN_SPEC)
+RUN_SPEC.loader.exec_module(run_research)
+
+
+class TerminalSnapshotTests(unittest.TestCase):
+    def test_terminal_snapshot_uses_large_text_and_fits_canvas(self):
+        root_dir = pathlib.Path(__file__).resolve().parents[1]
+        data = json.loads((root_dir / "results" / "research_run.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = pathlib.Path(temp_dir) / "results"
+            output.mkdir()
+            run_research.make_terminal_snapshot(output, data)
+            root = ET.parse(output / "terminal_snapshot.svg").getroot()
+
+        width = float(root.attrib["width"])
+        texts = [node for node in root.iter() if node.tag.endswith("text")]
+        body = [node for node in texts if float(node.attrib.get("y", "0")) >= 180]
+        self.assertGreaterEqual(len(body), 10)
+        self.assertIn("Stochastic Market Maker", "".join(node.itertext()) if texts else "")
+        for node in texts:
+            y = float(node.attrib["y"])
+            size = float(node.attrib.get("font-size", "0").replace("px", ""))
+            self.assertGreaterEqual(size, 24 if y >= 180 else 18)
+            estimated_width = len("".join(node.itertext())) * size * 0.62
+            self.assertLessEqual(float(node.attrib["x"]) + estimated_width, width - 12)
+
 
 
 class SensitivityToolsTests(unittest.TestCase):

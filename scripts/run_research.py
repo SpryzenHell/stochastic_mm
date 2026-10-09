@@ -111,14 +111,15 @@ def make_plots(out: pathlib.Path) -> None:
 
 
 def make_terminal_snapshot(out: pathlib.Path, data: dict) -> None:
-    """Write a readable SVG summary from the actual run JSON."""
+    """Write a large-text SVG summary from the actual run JSON."""
     from html import escape
 
     qvi = data["strategies"]["hjb_qvi"]
     base = data["strategies"]["fixed_spread"]
     reduction = 100.0 * (base["mean_rms_inventory"] - qvi["mean_rms_inventory"]) / base["mean_rms_inventory"]
+    out_label = str(out)
     lines = [
-        ("$ python scripts/run_research.py --runs " + str(data["runs"]) + " --output results/run_100", "#c5d9ff"),
+        ("$ python scripts/run_research.py --runs " + str(data["runs"]) + " --output " + out_label, "#c5d9ff"),
         (f"[PASS] {data['runs']} Monte Carlo paths completed", "#8fe3b0"),
         (f"HJB FDM solve:              {data['hjb_fdm_solve_ms']:.6f} ms", "#eeeeee"),
         (f"Hawkes branching ratio:     {data['hawkes']['branching_ratio']:.6f}", "#eeeeee"),
@@ -129,23 +130,26 @@ def make_terminal_snapshot(out: pathlib.Path, data: dict) -> None:
         (f"Fixed-spread mean PnL:      {base['mean_pnl']:.3f}", "#eeeeee"),
         (f"HJB-QVI mean RMS inventory: {qvi['mean_rms_inventory']:.3f}", "#eeeeee"),
         (f"Fixed-spread mean RMS inv.: {base['mean_rms_inventory']:.3f}", "#eeeeee"),
-        (f"RMS inventory change:       {reduction:.3f}%", "#8fe3b0" if reduction >= 0 else "#ff9d9d"),
+        (f"RMS inventory reduction:   {reduction:.3f}%", "#8fe3b0" if reduction >= 0 else "#ff9d9d"),
         ("Files: research_run.json, policy_t0.csv, sample_hawkes_events.csv", "#c7c7c7"),
     ]
+    width, height = 1440, 910
     svg = [
-        '<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="760" viewBox="0 0 1360 760">',
-        '<rect width="1360" height="760" fill="#f0f3f7"/>',
-        '<text x="48" y="45" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#17253a">Stochastic Market Maker</text>',
-        '<text x="48" y="78" font-family="Arial, sans-serif" font-size="17" fill="#56657a">Readable run summary generated from the actual JSON output</text>',
-        '<rect x="40" y="110" width="1280" height="610" rx="14" fill="#111923" stroke="#354254" stroke-width="2"/>',
-        '<path d="M40 124 Q40 110 54 110 H1306 Q1320 110 1320 124 V151 H40 Z" fill="#263548"/>',
-        '<circle cx="65" cy="131" r="6" fill="#ff6b6b"/><circle cx="87" cy="131" r="6" fill="#f6c85f"/><circle cx="109" cy="131" r="6" fill="#6bcf8b"/>',
-        '<text x="142" y="137" font-family="Arial, sans-serif" font-size="17" fill="#e5edf7">Experiment output</text>',
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">',
+        f'<rect width="{width}" height="{height}" fill="#f0f3f7"/>',
+        '<text x="52" y="52" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#17253a">Stochastic Market Maker</text>',
+        '<text x="52" y="87" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#56657a">Run summary generated from recorded JSON values · large-text view</text>',
+        '<rect x="40" y="115" width="1360" height="775" rx="14" fill="#111923" stroke="#354254" stroke-width="2"/>',
+        '<path d="M40 129 Q40 115 54 115 H1386 Q1400 115 1400 129 V159 H40 Z" fill="#263548"/>',
+        '<circle cx="65" cy="137" r="7" fill="#ff6b6b"/><circle cx="89" cy="137" r="7" fill="#f6c85f"/><circle cx="113" cy="137" r="7" fill="#6bcf8b"/>',
+        '<text x="145" y="145" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#e5edf7">Experiment output · reference metrics</text>',
     ]
-    y = 190
+    y = 210
     for line, color in lines:
-        svg.append(f'<text x="76" y="{y}" font-family="DejaVu Sans Mono, Consolas, Liberation Mono, monospace" font-size="19" fill="{color}">{escape(line)}</text>')
-        y += 38
+        svg.append(
+            f'<text x="76" y="{y}" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, Liberation Mono, monospace" font-size="25" fill="{color}">{escape(line)}</text>'
+        )
+        y += 50
     svg.extend(["</svg>", ""])
     (out / "terminal_snapshot.svg").write_text("\n".join(svg), encoding="utf-8")
 

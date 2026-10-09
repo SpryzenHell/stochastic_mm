@@ -493,7 +493,7 @@ The underlying event-level data is produced by the C++ runner as `sample_hawkes_
 This is a high-contrast, readable view of recorded values. It is not a live terminal screenshot or an additional simulation.
 
 <p align="center">
-  <img src="results/terminal_snapshot.svg" alt="Readable terminal-style reference run output" width="960">
+  <img src="results/terminal_snapshot.svg" alt="Large-text terminal-style reference run output" width="1000">
 </p>
 
 ## Model
@@ -614,9 +614,16 @@ The C++ regression tests check the full HJB grid, finite value and policy values
   <img src="results/test_coverage.svg" alt="Automated test coverage overview" width="960">
 </p>
 
-GitHub Actions tests both the Eigen-enabled and no-Eigen builds. It also checks Python syntax, verifies the checked-in data and SVG figures, runs the full experiment with 25 paths, and performs a 20-setting parameter sweep with 500 simulated paths. The generated CSV, JSON, and figures are saved as a workflow artifact.
+GitHub Actions tests both the Eigen-enabled and no-Eigen builds, runs the C++ regression checks, checks Python syntax and analysis-tool unit tests, and validates the checked-in data and figures. It then runs the full experiment with 100 paths, a 20-setting paired sensitivity sweep using 500 path evaluations, and a nested-seed convergence study with 375 path evaluations. Generated CSV, JSON, PNG, and SVG files are checked and saved as a workflow artifact.
 
 The CI workflow is in [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
+
+
+<p align="center">
+  <img src="results/validation_pipeline.svg" alt="Readable summary of the automated build, test and experiment checks" width="1000">
+</p>
+
+See the [CI workflow and run history](https://github.com/SpryzenHell/stochastic_mm/actions/workflows/ci.yml) for the latest results.
 
 ## Troubleshooting
 
